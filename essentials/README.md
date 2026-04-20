@@ -1,4 +1,4 @@
-# essentials/
+# essentials
 
 Core R functions shared across all modules of the **PLboost** project. Every script in `01_Testing/`, `02_Simulation/`, and `03_Applications/` depends on the files in this folder.
 
