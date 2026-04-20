@@ -13,7 +13,7 @@ São Paulo, 2026
 
 ## Folder map
 
-- `dissertation`: `01_Testing/`: scripts used to test IPL/PL setups | `02_Simulation/`: scripts used to run simulations and produce plots/results | `03_Applications/`: application scripts
+- `dissertation/`: `01_Testing/`: scripts used to test IPL/PL setups | `02_Simulation/`: scripts used to run simulations and produce plots/results | `03_Applications/`: application scripts
 - `essentials/`: shared R functions used across folders
 - `examples/`: small runnable examples (see below)
 
