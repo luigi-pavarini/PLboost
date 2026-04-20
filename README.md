@@ -1,4 +1,4 @@
-# Dissertation code (IME-USP)
+# Dissertation repository
 
 This repository contains the R code used in my dissertation work at **IME-USP**.
 It is organized as a set of scripts for **testing**, **simulation**, and **applications**, plus a small folder of shared functions.
