@@ -2,10 +2,9 @@ library(data.table)
 library(mboost)
 library(gamboostLSS)
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- grep("^--file=", args, value = TRUE)
-script_path <- if (length(file_arg) > 0) sub("^--file=", "", file_arg[1]) else NULL
-base_path <- if (!is.null(script_path)) dirname(normalizePath(script_path)) else getwd()
+# Needs to be settled!!!
+base_path <- "..."
+
 source(file.path(base_path, "essentials", "families_PL.R"))
 load(file.path(base_path, "df_itagrade.RData"))
 

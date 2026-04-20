@@ -1,10 +1,8 @@
 library(data.table)
 library(mltools)
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- grep("^--file=", args, value = TRUE)
-script_path <- if (length(file_arg) > 0) sub("^--file=", "", file_arg[1]) else NULL
-base_path <- if (!is.null(script_path)) dirname(normalizePath(script_path)) else getwd()
+# Needs to be settled!!!
+base_path <- "..."
 
 # ── LOAD ──────────────────────────────────────────────────────────────────────
 url <- "https://zenodo.org/records/15423018/files/dataset.csv?download=1"
