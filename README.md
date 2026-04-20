@@ -52,6 +52,6 @@ Rscript examples/iplboost_template.R
 ## Notes about paths and data
 
 - Some scripts currently define an **absolute** `base_path` (local path on my machine). If you are running this on a different computer, adjust `base_path` (or switch to relative paths).
--- The essentilas files like `families_IPL.R` and `families_PL.R` must have the source settled!!!
+- - The essentilas files like `families_IPL.R` and `families_PL.R` must have the source settled!!!
 
 - Large datasets and generated outputs (e.g. `.RData`, large `.csv`, images, archives) are intentionally **ignored** via `.gitignore` to keep the repository lightweight.
