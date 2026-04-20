@@ -4,15 +4,12 @@ library(faux)
 library(PLreg)
 library(Formula)
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- grep("^--file=", args, value = TRUE)
-script_path <- if (length(file_arg) > 0) sub("^--file=", "", file_arg[1]) else NULL
-script_dir <- if (!is.null(script_path)) dirname(normalizePath(script_path)) else getwd()
-essentials_dir <- file.path(script_dir, "essentials")
-source(file.path(essentials_dir, "v_function.r"))
-source(file.path(essentials_dir, "IPL_distributions.R"))
-source(file.path(essentials_dir, "families_IPL.R"))
-source(file.path(essentials_dir, "families_PL.R"))
+# Needs to be settled!!!
+base_path <- "..."
+source(file.path(base_path, "\essentials\v_function.r"))
+source(file.path(base_path, "\essentials\IPL_distributions.R"))
+source(file.path(base_path, "\essentials\families_IPL.R"))
+source(file.path(base_path, "\essentials\families_PL.R"))
 
 # ==============================================================================
 # SETTINGS
