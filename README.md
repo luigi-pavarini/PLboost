@@ -35,14 +35,7 @@ install.packages(c("data.table", "mltools", "gamboostLSS", "mboost", "Formula", 
 ```
 
 ### Running a script
-
-Example:
-
-```bash
-Rscript 01_Testing/testing_IPL.R
-```
-
-### Example: PLboost (boosted PL regression)
+#### Example: PLboost (boosted PL regression)
 
 There are very small templates under `examples/` (fill placeholders and run). For PLboost:
 
@@ -50,7 +43,7 @@ There are very small templates under `examples/` (fill placeholders and run). Fo
 Rscript examples/plboost_template.R
 ```
 
-### Example: IPLboost (boosted inflated PL regression)
+#### Example: IPLboost (boosted inflated PL regression)
 
 For one-inflated / zero-inflated responses:
 
