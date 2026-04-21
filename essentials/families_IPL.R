@@ -1,19 +1,4 @@
 # ─────────────────────────────────────────────────────────────
-# Inflated Power-Logit (IPL) Families for gamboostLSS/mboost
-# ─────────────────────────────────────────────────────────────
-# 
-# Author: Luigi Pavarini de Lima (MSc Probability & Statistics, IME-USP)
-# Framework: Inflated Power-Logit regression (Queiroz & Ferrari, 2024a)
-# 
-# Implementation of IPL distribution family for bounded data in [0,1] 
-# with potential probability mass at boundaries (0 or 1).
-#
-# Available family:
-# - IPL(): Full 4-parameter model (mu, sigma, lambda, alpha) 
-# 
-# ─────────────────────────────────────────────────────────────
-
-# ─────────────────────────────────────────────────────────────
 # Required Packages
 # ─────────────────────────────────────────────────────────────
 # install.packages(c("PLreg", "mboost", "gamboostLSS", "VGAM", "zipfR", 
