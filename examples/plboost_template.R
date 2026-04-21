@@ -14,6 +14,8 @@ suppressPackageStartupMessages({
 source(".../essentials/v_function.r")
 source(".../essentials/families_PL.R")
 
+# Enter also in families_PL.r and set the path for v_funcion.R (line 13)
+
 # --- data ---
 
 # df <- ... (a data.frame with response + covariates)
