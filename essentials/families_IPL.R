@@ -15,6 +15,21 @@ source(".../essentials/v_function.r")
 source(".../essentials/IPL_distributions.R")
 
 # ─────────────────────────────────────────────────────────────
+# Inflated Power Logit families (via PLreg) for use with gamboostLSS/mboost
+# Links:
+#   - mu     : logit (μ ∈ (0,1))
+#   - sigma  : log   (σ > 0)
+#   - lambda : log   (λ > 0)  ➜ kept FIXED (no regression on λ)
+#   - alpha  : logit (α ∈ (0,1))
+#
+# Notes:
+#   * We include λ as a model parameter (log link), but DO NOT fit a
+#     regression for it; treat λ as a hyperparameter set once (e.g., λ = 1.2).
+#   * Density via PLreg:::dPL (advisor's implementation).
+# Requirements: PLreg, mboost, gamboostLSS
+# ─────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────
 # IPL Family for mu (location parameter)
 # ─────────────────────────────────────────────────────────────
 IPLMu <- function(sigma = NULL,
