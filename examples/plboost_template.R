@@ -35,12 +35,11 @@ pl_family <- PowerLogit(
 
 # --- formulas ---
 
-# Option A (simple): use all columns in df except the response
-# mu_formula    <- as.formula(paste(y_name, "~ ."))
-# sigma_formula <- as.formula(paste(y_name, "~ ."))
+# You can use all columns in df except the response:
+# mu_formula    <- y ~ .
+# sigma_formula <- y ~ .
 #
-# Option B: specify subsets / different covariates for each parameter
-stop("TODO: define `mu_formula` and `sigma_formula` (and keep `lambda` as intercept-only).")
+# Or specify subsets for each parameter:
 
 mu_formula    <- NULL # e.g. "y ~ V1 + V2 + V3 + V4"
 sigma_formula <- NULL # e.g. "y ~ V3 + V4 + V5"
