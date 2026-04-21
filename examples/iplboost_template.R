@@ -15,6 +15,8 @@ source(".../essentials/v_function.r")
 source(".../essentials/IPL_distributions.R")
 source(".../essentials/families_IPL.R")
 
+# Enter also in families_IPL.r and set the path for v_funcion.R and IPL_distribution.R (lines 14 and 15)
+
 # --- data ---
 
 # df <- ... (a data.frame with response + covariates)
