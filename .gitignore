@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+.AppleDouble
+
+# R / RStudio
+.Rhistory
+.RData
+.Rapp.history
+.Ruserdata
+.Renviron
+.Rproj.user/
+*.Rproj
+
+# Build artefacts
+*.tar.gz
+*.Rcheck/
+src/*.o
+src/*.so
+
+# Results and data: code is versioned, outputs are not
+*.rds
+*.rda
+*.csv
+*.parquet
+*.zip
+*.png
+*.jpg
+*.pdf
+reproduce/**/results/
+reproduce/**/imgs/
+reproduce/ch4_application/data/
