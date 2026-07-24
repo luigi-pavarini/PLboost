@@ -1,0 +1,38 @@
+Package: PLboost
+Type: Package
+Title: Boosting for Power Logit and Inflated Power Logit Regression
+Version: 0.1.0
+Authors@R: person("Luigi", "Pavarini de Lima",
+                  email = "luigi.pavarini@ime.usp.br",
+                  role = c("aut", "cre"))
+Description: Gradient boosting families for the power logit (PL) class of
+    distributions and its inflated extension (IPL), for regression with a
+    response bounded on the unit interval. The package supplies 'Families'
+    objects compatible with 'gamboostLSS', so that the median, dispersion,
+    skewness and (for the inflated case) boundary-probability submodels are
+    estimated jointly by component-wise gradient boosting, with variable
+    selection and regularization as a by-product. It accompanies the MSc
+    dissertation "Boosting-based Inference and Variable Selection for
+    Modeling Bounded Continuous Data" (IME-USP).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.0)
+Imports:
+    gamboostLSS,
+    mboost,
+    PLreg,
+    VGAM,
+    zipfR,
+    stats
+Suggests:
+    faux,
+    Formula
+RoxygenNote: 7.3.2
+Collate:
+    'v_function.R'
+    'IPL_distributions.R'
+    'families_PL.R'
+    'families_IPL.R'
+URL: https://github.com/luigi-pavarini/PLboost
+BugReports: https://github.com/luigi-pavarini/PLboost/issues
