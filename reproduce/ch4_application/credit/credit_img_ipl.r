@@ -1,16 +1,33 @@
 # ==============================================================================
-# credit_img_ipl_TF.R
-# Visualization script for the Credit LGD IPL application
-# Copy of credit_img_ipl.R with near-zero-coefficient filtering in the
-# coefficient forest plots (drops |avg coef| < min_abs so bars sitting on the
-# zero line are no longer shown).
-# All plots in base R to match simulation chapter style
+# credit_img_ipl_cv.R
+# Visualization script for the Credit LGD IPL application — CV version.
+# Reads the 5-fold CV outputs (sim_results_credit_VT_cv_<FAM>_<batch>.RData) via
+# load_cv_results(), which globs and merges EVERY batch tag (_1, _2, _3, ...);
+# credit's three batches (repeats 1-3 / 4-6 / 7-10) are pooled automatically, so
+# the new _3 needs NO change here.
+# Adapts to the number of repeats automatically: each "entry" is one (repeat,
+# fold) result; with R_REPEATS=1 there are 5 entries, with R_REPEATS>1 there are
+# k*R. The error bars / selection rates / distributions are computed over the
+# n_entries available — no hardcoded 100.
 # ==============================================================================
 
-fam          <- "TF"  # ← change this to switch family
-app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")  # set PLBOOST_OUT or run from the repo root
-results_path <- file.path(app_path, "01_replications", "results")
-base_path    <- file.path(app_path, "01_replications", "imgs", fam)
+fam          <- "Hyp"  # ← change this to switch family NO, TF, LO, PE, SN, SLASH, Hyp
+# --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
+.script_dir <- function() {
+  for (i in seq_len(sys.nframe())) {
+    o <- sys.frame(i)$ofile
+    if (!is.null(o)) return(dirname(normalizePath(o)))
+  }
+  a  <- commandArgs(trailingOnly = FALSE)
+  sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  if (length(sp)) return(dirname(normalizePath(sp)))
+  getwd()
+}
+
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+results_path <- file.path(app_path, "cross_val", "results")
+base_path    <- file.path(app_path, "cross_val", "imgs", fam)
+if (!dir.exists(base_path)) dir.create(base_path, recursive = TRUE)
 
 # ---- Image export settings --------------------------------------------------
 img_width  <- 2000
@@ -18,14 +35,18 @@ img_height <- 2000
 img_res    <- 330
 rel_dim    <- 1.8
 
+source(file.path(app_path, "essentials", "cv_load.R"))
 load(file.path(app_path, "data", "df_lgd_all.RData"))
-load(file.path(results_path, paste0("sim_results_credit_VT_", fam, ".RData")))
+
+cv          <- load_cv_results(results_path, "sim_results_credit_VT", fam)
+sim_results <- cv$sim_results
+var_dict    <- cv$var_dict
 
 # ── FILTER NULL ENTRIES ───────────────────────────────────────────────────────
 success_idx <- which(!sapply(sim_results, is.null))
 sim_results <- sim_results[success_idx]
-n_success   <- length(sim_results)
-cat("Successful replications:", n_success, "/ 100\n")
+n_success   <- length(sim_results)   # = k * R that succeeded (5 if single pass)
+cat("Successful CV entries (folds x repeats):", n_success, "\n")
 
 # ==============================================================================
 # HELPERS
@@ -52,7 +73,7 @@ all_ytest     <- unlist(lapply(sim_results, function(x) x$y_test))
 all_muhat     <- unlist(lapply(sim_results, function(x) x$mu_hat))
 all_resid     <- all_ytest - all_muhat
 all_alpha_hat <- unlist(lapply(sim_results, function(x) x$alpha_hat))
-lambda_hat_vec <- sapply(sim_results, function(x) exp(x$coef_lambda["(Intercept)"]))
+lambda_hat_vec <- sapply(sim_results, function(x) exp(x$coef_lambda["(Intercept)"] + attr(x$coef_lambda, "offset")))
 
 has_zeta <- !all(sapply(zeta_best_vec, is.null))
 
@@ -181,7 +202,7 @@ if (has_zeta) {
   zeta_tab <- table(unlist(zeta_best_vec))
   barplot(zeta_tab,
           xlab = expression(zeta),
-          ylab = "Number of replications",
+          ylab = "Number of CV entries",
           col = "gray85", border = "gray30",
           las = 1, main = "")
   abline(h = 0, col = "gray60")
@@ -265,11 +286,12 @@ dev.off()
 png(file.path(base_path, "plot_lambda_boxplot.png"),
     width = img_width, height = img_height, res = img_res)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
+lam_r <- range(lambda_hat_vec); lam_pad <- 0.6 * diff(lam_r) + 0.05
 boxplot(lambda_hat_vec,
         ylab = expression("Estimated  " * hat(lambda)),
         xaxt = "n", col = "gray85", border = "gray30",
         las = 1, outline = TRUE, main = "",
-        ylim = c(0, max(lambda_hat_vec) * 1.1))
+        ylim = c(lam_r[1] - lam_pad, lam_r[2] + lam_pad))
 axis(1, at = 1, labels = "IPL")
 abline(h = mean(lambda_hat_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
@@ -327,7 +349,7 @@ min_mu  <- mu_seq[min_idx]
 plot(all_muhat, all_alpha_hat,
      pch = 19, cex = 0.3,
      col = adjustcolor("gray30", alpha.f = 0.15),
-     xlab = expression("Predicted mean  " * hat(mu)),
+     xlab = expression("Predicted median  " * hat(mu)),
      ylab = expression("Predicted inflation probability  " * hat(alpha)),
      las = 1, main = "")
 polygon(c(mu_seq, rev(mu_seq)),
@@ -340,7 +362,7 @@ text(min_mu, par("usr")[4] * 0.97,
      adj = c(-0.1, 1), col = "gray40", cex = 0.75)
 rug(all_muhat, col = adjustcolor("gray30", alpha.f = 0.05), ticksize = 0.02)
 legend("topleft",
-       legend = c("Observations", "Loess trend", "±1 SE band"),
+       legend = c("Observations", "Loess trend", "\u00b11 SE band"),
        col    = c(adjustcolor("gray30", 0.5), "red4", adjustcolor("red4", 0.4)),
        pch    = c(19, NA, NA), lty = c(NA, 1, NA), lwd = c(NA, 2, NA),
        fill   = c(NA, NA, adjustcolor("red4", 0.15)),
@@ -351,8 +373,6 @@ dev.off()
 
 # ==============================================================================
 # PLOTS 8-10: Coefficient forest plots — mu, sigma, alpha
-#   min_abs drops variables whose average coefficient is essentially zero,
-#   so bars sitting on the zero line are no longer shown.
 # ==============================================================================
 
 plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
@@ -420,9 +440,9 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
          bg = "white", cex = 1.3, lwd = 1.2)
   axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 0.78)
   legend(legend_pos,
-         legend = c("±1 SD body (positive)", "±1 SD body (negative)",
-                    "±1.645 SD solid (positive)", "±1.645 SD solid (negative)",
-                    "±1.960 SD dotted T", "Mean"),
+         legend = c("\u00b11 SD body (positive)", "\u00b11 SD body (negative)",
+                    "\u00b11.645 SD solid (positive)", "\u00b11.645 SD solid (negative)",
+                    "\u00b11.960 SD dotted T", "Mean"),
          fill   = c(col_pos, col_neg, NA, NA, NA, NA),
          border = c(col_bord, col_bord, NA, NA, NA, NA),
          lty    = c(NA, NA, 1, 1, 3, NA),
@@ -460,9 +480,9 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   n_plot     <- length(p_plot)
 
   xlab_expr <- switch(param_label,
-    mu    = expression("Avg. selection proportion across replications" ~ eta[mu]),
-    sigma = expression("Avg. selection proportion across replications" ~ eta[sigma]),
-    alpha = expression("Avg. selection proportion across replications" ~ eta[alpha])
+    mu    = expression("Avg. selection proportion across CV entries" ~ eta[mu]),
+    sigma = expression("Avg. selection proportion across CV entries" ~ eta[sigma]),
+    alpha = expression("Avg. selection proportion across CV entries" ~ eta[alpha])
   )
 
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
@@ -532,7 +552,7 @@ cat("  lgd median             :", round(median(y_all), 4), "\n")
 cat("  lgd SD                 :", round(sd(y_all), 4), "\n")
 cat("  Proportion lgd = 1     :", round(mean(y_all == 1) * 100, 1), "%\n\n")
 
-cat("--- Prediction performance (", n_success, "replications) ---\n")
+cat("--- Prediction performance (", n_success, "CV entries) ---\n")
 cat("  Mean MSE x 100         :", round(mean(errors_ipl), 3), "\n")
 cat("  SD   MSE x 100         :", round(sd(errors_ipl), 3), "\n")
 cat("  Min  MSE x 100         :", round(min(errors_ipl), 3), "\n")
@@ -550,7 +570,7 @@ cat("  SD   Upsilon           :", round(sd(upsilon_vec), 4), "\n")
 cat("  Min  Upsilon           :", round(min(upsilon_vec), 4), "\n")
 cat("  Max  Upsilon           :", round(max(upsilon_vec), 4), "\n\n")
 
-cat("--- Zeta selected (across", n_success, "replications) ---\n")
+cat("--- Zeta selected (across", n_success, "CV entries) ---\n")
 if (has_zeta) {
   print(table(unlist(zeta_best_vec)))
 } else {
@@ -564,14 +584,14 @@ cat("  SD   residual          :", round(sd(all_resid), 4), "\n")
 cat("  Min  residual          :", round(min(all_resid), 4), "\n")
 cat("  Max  residual          :", round(max(all_resid), 4), "\n\n")
 
-cat("--- Lambda estimates across replications ---\n")
+cat("--- Lambda estimates across CV entries ---\n")
 cat("  Mean lambda            :", round(mean(lambda_hat_vec), 4), "\n")
 cat("  Median lambda          :", round(median(lambda_hat_vec), 4), "\n")
 cat("  SD   lambda            :", round(sd(lambda_hat_vec), 4), "\n")
 cat("  Range lambda           : [", round(min(lambda_hat_vec), 4), ",",
     round(max(lambda_hat_vec), 4), "]\n\n")
 
-cat("--- Predicted alpha (test set, all replications) ---\n")
+cat("--- Predicted alpha (test set, all CV entries) ---\n")
 cat("  Mean alpha_hat         :", round(mean(all_alpha_hat), 4), "\n")
 cat("  Median alpha_hat       :", round(median(all_alpha_hat), 4), "\n")
 cat("  SD   alpha_hat         :", round(sd(all_alpha_hat), 4), "\n")

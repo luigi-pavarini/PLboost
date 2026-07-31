@@ -104,7 +104,7 @@ part of the installed package.
 |---|---|
 | `ch2_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood, on simulated data where both are feasible (Tables 2.3 to 2.5) |
 | `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel |
-| `ch4_application/` | the loss given default application, 100 random 80/20 train-test splits |
+| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, inflated PL) and `inep/` (Conceito Enade course quality, plain PL) |
 
 Scripts write their output to the directory given by the `PLBOOST_OUT` environment
 variable, defaulting to the working directory:

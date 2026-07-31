@@ -1,15 +1,31 @@
 # ==============================================================================
-# credit_img_beoi.R
-# Visualization script for the Credit LGD BEOI application
-# All plots in base R to match simulation chapter style
-# BEOI model with 3 submodels: mu, sigma, nu
-# No lambda, no zeta
+# credit_img_beoi_cv.R
+# Visualization for the Credit LGD BEOI application — CV version.
+# Reads 5-fold CV outputs (sim_results_credit_VT_cv_BEOI_<batch>.RData) via
+# load_cv_results(), which globs and merges EVERY batch tag (_1, _2, _3, ...);
+# credit's three batches (repeats 1-3 / 4-6 / 7-10) are pooled automatically, so
+# the new _3 needs NO change here.
+# Adapts to the number of repeats: each entry is one (repeat, fold) result;
+# denominators use n_entries (5 if single pass, k*R if repeated). No lambda/zeta.
 # ==============================================================================
 
-fam          <- "Beta"
-app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")  # set PLBOOST_OUT or run from the repo root
-results_path <- file.path(app_path, "01_replications", "results")
-base_path    <- file.path(app_path, "01_replications", "imgs", fam)
+fam          <- "Beta"   # used only for the imgs/<fam> output folder name
+# --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
+.script_dir <- function() {
+  for (i in seq_len(sys.nframe())) {
+    o <- sys.frame(i)$ofile
+    if (!is.null(o)) return(dirname(normalizePath(o)))
+  }
+  a  <- commandArgs(trailingOnly = FALSE)
+  sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  if (length(sp)) return(dirname(normalizePath(sp)))
+  getwd()
+}
+
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+results_path <- file.path(app_path, "cross_val", "results")
+base_path    <- file.path(app_path, "cross_val", "imgs", fam)
+if (!dir.exists(base_path)) dir.create(base_path, recursive = TRUE)
 
 # ---- Image export settings --------------------------------------------------
 img_width  <- 2000
@@ -17,13 +33,17 @@ img_height <- 2000
 img_res    <- 330
 rel_dim    <- 1.8
 
-load(file.path(results_path, "sim_results_credit_VT_BEOI.RData"))
+source(file.path(app_path, "essentials", "cv_load.R"))
+
+cv          <- load_cv_results(results_path, "sim_results_credit_VT", "BEOI")
+sim_results <- cv$sim_results
+var_dict    <- cv$var_dict
 
 # ── FILTER NULL ENTRIES ───────────────────────────────────────────────────────
 success_idx <- which(!sapply(sim_results, is.null))
 sim_results <- sim_results[success_idx]
-n_success   <- length(sim_results)
-cat("Successful replications:", n_success, "/ 100\n")
+n_success   <- length(sim_results)   # = k * R that succeeded (5 if single pass)
+cat("Successful CV entries (folds x repeats):", n_success, "\n")
 
 # ==============================================================================
 # HELPERS
@@ -398,9 +418,9 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   lbl_plot   <- c(top_names, "others")
   n_plot     <- length(p_plot)
   xlab_expr <- switch(param_label,
-    mu    = expression("Avg. selection proportion across replications" ~ eta[mu]),
-    sigma = expression("Avg. selection proportion across replications" ~ eta[sigma]),
-    nu    = expression("Avg. selection proportion across replications" ~ eta[nu])
+    mu    = expression("Avg. selection proportion across CV entries" ~ eta[mu]),
+    sigma = expression("Avg. selection proportion across CV entries" ~ eta[sigma]),
+    nu    = expression("Avg. selection proportion across CV entries" ~ eta[nu])
   )
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
   old_par <- par(mar = c(4, 12, 2, 2))
@@ -469,7 +489,7 @@ cat("  lgd median             :", round(median(y_all), 4), "\n")
 cat("  lgd SD                 :", round(sd(y_all), 4), "\n")
 cat("  Proportion lgd = 1     :", round(mean(y_all == 1) * 100, 1), "%\n\n")
 
-cat("--- Prediction performance (", n_success, "replications) ---\n")
+cat("--- Prediction performance (", n_success, "CV entries) ---\n")
 cat("  Mean MSE x 100         :", round(mean(errors_beoi), 3), "\n")
 cat("  SD   MSE x 100         :", round(sd(errors_beoi), 3), "\n")
 cat("  Min  MSE x 100         :", round(min(errors_beoi), 3), "\n")
@@ -493,7 +513,7 @@ cat("  SD   residual          :", round(sd(all_resid), 4), "\n")
 cat("  Min  residual          :", round(min(all_resid), 4), "\n")
 cat("  Max  residual          :", round(max(all_resid), 4), "\n\n")
 
-cat("--- Predicted nu (test set, all replications) ---\n")
+cat("--- Predicted nu (test set, all CV entries) ---\n")
 cat("  Mean nu_hat            :", round(mean(all_nu_hat), 4), "\n")
 cat("  Median nu_hat          :", round(median(all_nu_hat), 4), "\n")
 cat("  SD   nu_hat            :", round(sd(all_nu_hat), 4), "\n")
