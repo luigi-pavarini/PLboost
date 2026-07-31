@@ -213,7 +213,7 @@ PLLambda <- function(mu = NULL,
                      interval = log(c(0.1, 2)),   # lambda in [0.1, 2]
                      y = y, w = w
     )$minimum
-    RET <<- log(0.1)
+    # RET <<- log(0.1)   # removed: use the optimized offset (like IPL), do not override
     return(RET)
   }
   
