@@ -239,16 +239,20 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
 }
 
 lollipop_sel <- function(coef_mat, var_dict, top_n = 15, param_label = "mu", filename) {
-  ct <- colSums(coef_mat != 0); ct[ct == 0] <- 1
-  prop <- sweep(coef_mat != 0, 2, ct, FUN = "/"); M <- ncol(prop)
-  avg <- rowSums(prop)/M; sdv <- apply(prop, 1, sd)
+  # Proportion of folds in which each variable received a non-zero coefficient.
+  # (Previously this normalized each fold's selections to sum to 1, giving a share of
+  #  the selection budget rather than a selection frequency, which contradicted the
+  #  tables where e.g. prop_enem = 1.00.)
+  M <- ncol(coef_mat)
+  avg <- rowMeans(coef_mat != 0)
+  sdv <- sqrt(avg * (1 - avg) / M)   # binomial standard error
   tn <- min(top_n, length(avg)); ord <- order(avg, decreasing = TRUE)[seq_len(tn)]
   ta <- avg[ord]; ts <- sdv[ord]; tnm <- map_names(names(ta), var_dict)
   tnm <- ifelse(nchar(tnm) > 34, paste0(substr(tnm, 1, 33), "…"), tnm)
-  p <- c(ta, sum(avg[-ord])); s <- c(ts, sqrt(sum(sdv[-ord]^2))); lbl <- c(tnm, "others")
+  p <- c(ta, mean(avg[-ord])); s <- c(ts, sqrt(sum(sdv[-ord]^2))); lbl <- c(tnm, "others")
   np <- length(p)
-  xlab_expr <- if (param_label == "mu") expression("Avg. selection proportion" ~ eta[mu]) else
-                                        expression("Avg. selection proportion" ~ eta[sigma])
+  xlab_expr <- if (param_label == "mu") expression("Proportion of folds selected" ~ eta[mu]) else
+                                        expression("Proportion of folds selected" ~ eta[sigma])
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
   op <- par(mar = c(4, 12, 2, 2)); xm <- max(p + s, na.rm = TRUE) * 1.15
   plot(p, seq_len(np), ylim = c(np, 1), xlim = c(0, xm), yaxt = "n",

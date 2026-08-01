@@ -349,17 +349,12 @@ segments(x0 = 2.5, x1 = 3.5, y0 = 0,             y1 = 0,             lty = 2, co
 
 lollipop_sel <- function(freq_mat, top_n = 15, param_label = "mu", sd_mult = 1) {
   
-  # Step 1: normalize each run (column) to proportions — avoids mixing samples
-  col_totals <- colSums(freq_mat)
-  col_totals[col_totals == 0] <- 1  # guard against zero-sum columns
-  prop_mat <- sweep(freq_mat, 2, col_totals, FUN = "/")
-  
-  # Drop intercept row
-  prop_mat <- prop_mat[-1, ]
-  
-  # Step 2: average proportion and sd across M runs
-  avg_prop <- rowSums(prop_mat) / M
-  sd_prop  <- apply(prop_mat, 1, sd)
+  # Proportion of replications in which each covariate was selected at least once.
+  # (Previously this normalized each run's selection COUNTS to sum to 1, a share of
+  #  the boosting update budget rather than a selection frequency.)
+  sel_mat  <- (freq_mat > 0)[-1, , drop = FALSE]
+  avg_prop <- rowMeans(sel_mat)
+  sd_prop  <- sqrt(avg_prop * (1 - avg_prop) / M)   # binomial standard error
   
   # Step 3: select top_n by average proportion
   ord       <- order(avg_prop, decreasing = TRUE)[seq_len(top_n)]
@@ -368,8 +363,8 @@ lollipop_sel <- function(freq_mat, top_n = 15, param_label = "mu", sd_mult = 1) 
   top_names <- names(top_avg)
   
   # Step 4: collapse remaining into "others"
-  others_avg <- sum(avg_prop[-ord])
-  others_sd  <- sqrt(sum(sd_prop[-ord]^2))  # pooled sd for "others"
+  others_avg <- mean(avg_prop[-ord])
+  others_sd  <- sd(avg_prop[-ord])
   
   p_plot   <- c(top_avg, others_avg)
   sd_plot  <- c(top_sd,  others_sd)
@@ -378,9 +373,9 @@ lollipop_sel <- function(freq_mat, top_n = 15, param_label = "mu", sd_mult = 1) 
   
   # Step 5: axis label
   xlab_expr <- switch(param_label,
-                      mu    = expression("Avg. selection proportion across M runs" ~ eta[mu]),
-                      sigma = expression("Avg. selection proportion across M runs" ~ eta[sigma]),
-                      alpha = expression("Avg. selection proportion across M runs" ~ eta[alpha])
+                      mu    = expression("Proportion of replications selected" ~ eta[mu]),
+                      sigma = expression("Proportion of replications selected" ~ eta[sigma]),
+                      alpha = expression("Proportion of replications selected" ~ eta[alpha])
   )
   
   # Step 6: plot

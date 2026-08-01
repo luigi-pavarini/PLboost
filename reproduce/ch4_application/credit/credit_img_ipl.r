@@ -461,28 +461,29 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
 
 lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
                              param_label = "mu", sd_mult = 1, filename) {
-  col_totals <- colSums(coef_mat != 0)
-  col_totals[col_totals == 0] <- 1
-  prop_mat   <- sweep(coef_mat != 0, 2, col_totals, FUN = "/")
-  M          <- ncol(prop_mat)
-  avg_prop   <- rowSums(prop_mat) / M
-  sd_prop    <- apply(prop_mat, 1, sd)
+  # Proportion of folds in which each variable received a non-zero coefficient.
+  # (Previously this normalized each fold's selections to sum to 1, giving a share of
+  #  the selection budget rather than a selection frequency, which contradicted the
+  #  tables where e.g. term_36_months = 1.00.)
+  M          <- ncol(coef_mat)
+  avg_prop   <- rowMeans(coef_mat != 0)
+  sd_prop    <- sqrt(avg_prop * (1 - avg_prop) / M)   # binomial standard error
   top_n_use  <- min(top_n, length(avg_prop))
   ord        <- order(avg_prop, decreasing = TRUE)[seq_len(top_n_use)]
   top_avg    <- avg_prop[ord]
   top_sd     <- sd_prop[ord]
   top_names  <- map_names(names(top_avg), var_dict)
-  others_avg <- sum(avg_prop[-ord])
-  others_sd  <- sqrt(sum(sd_prop[-ord]^2))
+  others_avg <- mean(avg_prop[-ord])
+  others_sd  <- sd(avg_prop[-ord])
   p_plot     <- c(top_avg, others_avg)
   sd_plot    <- c(top_sd,  others_sd)
   lbl_plot   <- c(top_names, "others")
   n_plot     <- length(p_plot)
 
   xlab_expr <- switch(param_label,
-    mu    = expression("Avg. selection proportion across CV entries" ~ eta[mu]),
-    sigma = expression("Avg. selection proportion across CV entries" ~ eta[sigma]),
-    alpha = expression("Avg. selection proportion across CV entries" ~ eta[alpha])
+    mu    = expression("Proportion of folds selected" ~ eta[mu]),
+    sigma = expression("Proportion of folds selected" ~ eta[sigma]),
+    alpha = expression("Proportion of folds selected" ~ eta[alpha])
   )
 
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
