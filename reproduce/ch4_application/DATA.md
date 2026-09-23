@@ -15,7 +15,7 @@ $PLBOOST_OUT/
   cross_val/    # created by the scripts for results and figures
 ```
 
-The `essentials/cv_load.R` and `essentials/cv_summary.R` helpers are shipped in
+The `essentials/cv_load.R`, `essentials/cv_summary.R` and `essentials/selection_table.R` helpers are shipped in
 [`essentials/`](essentials); copy them (together with the family files) into
 `$PLBOOST_OUT/essentials/`.
 
@@ -43,8 +43,14 @@ Predictive performance is assessed by **5-fold cross-validation repeated 10 time
 
 1. `credit_run.r`     — fits the six inflated power logit generators and the one-inflated beta baseline (BEOI) over the 50 folds
 2. `credit_summary.r` — assembles the family-comparison table (MSE, MAE, Upsilon)
-3. `credit_img_ipl.r` — coefficient, selection and diagnostic plots for the chosen IPL-t model
+3. `credit_img_ipl.r` — coefficient, selection and diagnostic plots for the chosen IPL-t model (`fam <- "TF"`)
 4. `credit_img_beoi.r` — the BEOI baseline plots
+5. `../essentials/selection_table.R credit/credit_img_ipl.r` — the selection table (frequency, average coefficient, band avg ± 1.96 sd)
+
+Supplementary, not in the text of dissertation v1.0 — diagnostics of a single fit on the
+full sample, in `credit/final_fit/`: `credit_final_fit.R` (IPL-t final fit and quantile
+residuals), then `credit_qres_envelope.R` (three residual panels with a simulated
+envelope) and `credit_beoi_qres.R` (the same panels for BEOI).
 
 ---
 
@@ -65,3 +71,7 @@ so the plain (non-inflated) power logit class is used. Same 50-fold cross-valida
 2. `inep_run.r`      — fits the six power logit generators and the beta baseline over the 50 folds
 3. `inep_summary.r`, `inep_table.r` — family-comparison table and predictive summary
 4. `inep_img.r`      — coefficient, selection and diagnostic plots for the PL-NO model
+5. `../essentials/selection_table.R inep/inep_img.r` — the selection table
+
+Supplementary, not in the text of dissertation v1.0: `inep/final_fit/inep_final_fit.R`,
+the PL-NO final fit on the full sample with a quantile-residual envelope.
