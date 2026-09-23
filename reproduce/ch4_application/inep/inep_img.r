@@ -49,9 +49,33 @@ cat("Family =", fam, "| successful CV entries:", n_success, "\n")
 # ==============================================================================
 # HELPERS  (identical to the IPL script; alpha removed)
 # ==============================================================================
+# English labels for the figures.  Keyed on the stable V-codes (dict$new_name)
+# rather than on orig_name, so the lookup stays ASCII and locale-proof.
+en_labels <- c(
+  V1  = "n_grads_registered",     V2  = "n_grads_participants",
+  V3  = "prop_enem",              V4  = "score_masters",
+  V5  = "score_doctorates",       V6  = "score_workload",
+  V7  = "score_infrastructure",   V8  = "score_pedagogy",
+  V9  = "score_extension",        V10 = "n_seats",
+  V11 = "n_entrants",             V12 = "n_enrolled",
+  V13 = "sh_female_entrants",     V14 = "sh_enem_entrants",
+  V15 = "sh_young_entrants",      V16 = "sh_white_entrants",
+  V17 = "sh_black_brown_entrants",V18 = "sh_fies_grads",
+  V19 = "sh_prouni_grads",        V20 = "sh_quota_grads",
+  V21 = "sh_public_school_grads", V22 = "applicants_per_seat",
+  V23 = "completion_rate",        V24 = "org_UniversityCentre",
+  V25 = "org_College",            V26 = "org_University",
+  V27 = "cat_CommunityConfessional", V28 = "cat_Special",
+  V29 = "cat_StatePublic",        V30 = "cat_FederalPublic",
+  V31 = "cat_MunicipalPublic",    V32 = "cat_PrivateForProfit",
+  V33 = "cat_PrivateNonProfit"
+)
+
 map_names <- function(vnames, dict) {
+  lab <- unname(en_labels[vnames])
   idx <- match(vnames, dict$new_name)
-  ifelse(is.na(idx), vnames, dict$orig_name[idx])
+  fallback <- ifelse(is.na(idx), vnames, dict$orig_name[idx])
+  ifelse(is.na(lab), fallback, lab)
 }
 
 all_test_df <- do.call(rbind, lapply(sim_results, function(x)
@@ -88,11 +112,18 @@ coef_sigma_mat <- build_coef_mat(lapply(sim_results, function(x) x$coef_sigma))
 png(file.path(base_path, "plot_response_dist.png"),
     width = img_width, height = img_height, res = img_res)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
+# Escala vertical calculada a partir da barra mais alta e do pico da densidade.
+# Sem ylim explícito, o eixo parava na última marca "bonita" abaixo do máximo,
+# ficando abaixo do topo da barra.
+h_obj    <- hist(y_all, breaks = seq(0, 1, length.out = 5), plot = FALSE)
+d_obj    <- density(y_all, bw = "SJ")
+ylim_top <- max(c(h_obj$density, d_obj$y)) * 1.08
+
 hist(y_all, breaks = seq(0, 1, length.out = 5), freq = FALSE,  # exactly 4 bars
      col = "gray85", border = "white",
      xlab = "Conceito Enade / 5", ylab = "Density", main = "", las = 1,
-     xlim = c(0, 1))
-lines(density(y_all, bw = "SJ"), col = "gray30", lwd = 2)
+     xlim = c(0, 1), ylim = c(0, ylim_top))
+lines(d_obj, col = "gray30", lwd = 2)
 abline(v = mean(y_all), lty = 3, col = "gray40", lwd = 1.5)
 legend("topright",
        legend = c("Kernel density", "Mean"),
@@ -126,8 +157,14 @@ if (has_zeta) {
       width = img_width, height = img_height, res = img_res)
   op <- par(mar = c(4.5, 4.5, 2, 2))
   zeta_tab <- table(unlist(zeta_best_vec))
+  # Topo do eixo no próximo múltiplo de 10 acima da barra mais alta, para o
+  # eixo vertical não terminar abaixo dela (padrão do barplot sem ylim).
+  ytop_z  <- max(10 * ceiling(max(zeta_tab) / 10), n_success)
+  ticks_z <- seq(0, ytop_z, by = 10)
   barplot(zeta_tab, xlab = expression(zeta), ylab = "Number of CV entries",
-          col = "gray85", border = "gray30", las = 1, main = "")
+          col = "gray85", border = "gray30", las = 1, main = "",
+          ylim = c(0, ytop_z), yaxt = "n")
+  axis(2, at = ticks_z, las = 1)
   abline(h = 0, col = "gray60")
   legend("topright", legend = paste0("Most selected: zeta = ",
          names(zeta_tab)[which.max(zeta_tab)], "  (", max(zeta_tab), "/", n_success, ")"),
@@ -188,7 +225,7 @@ op <- par(mar = c(4.5, 4.5, 2, 2))
 lam_r <- range(lambda_hat_vec); lam_pad <- 0.6 * diff(lam_r) + 0.05
 boxplot(lambda_hat_vec, ylab = expression("Estimated  " * hat(lambda)), xaxt = "n",
         col = "gray85", border = "gray30", las = 1, outline = TRUE, main = "",
-        ylim = c(lam_r[1] - lam_pad, lam_r[2] + lam_pad))
+        ylim = c(0, lam_r[2] + lam_pad))   # lambda > 0: eixo parte do zero
 axis(1, at = 1, labels = "PL")
 abline(h = mean(lambda_hat_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright", legend = paste0("Mean = ", round(mean(lambda_hat_vec), 3),

@@ -11,7 +11,7 @@
 # n_entries available — no hardcoded 100.
 # ==============================================================================
 
-fam          <- "Hyp"  # ← change this to switch family NO, TF, LO, PE, SN, SLASH, Hyp
+fam          <- "TF"   # model reported in the dissertation (IPL-t); also NO, LO, PE, SN, SLASH, Hyp
 # --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {
@@ -111,12 +111,19 @@ dens_y    <- dens_obj$y[dens_obj$x < 1]
 pin_x     <- dens_x[which.max(dens_x)]
 pin_height <- dens_y[which.max(dens_x)]
 
+# Escala vertical calculada a partir da barra mais alta do histograma.
+# Antes era fixa em c(0, 10), o que cortava a barra da massa em LGD = 1
+# (densidade ~21.7 com breaks = 25), deixando o eixo abaixo da barra.
+h_obj    <- hist(y_all, breaks = 25, plot = FALSE)
+dens_pl  <- dens_y * (1 - prop_one) * (1 / max(dens_obj$x))
+ylim_top <- max(c(h_obj$density, dens_pl, pin_height)) * 1.08
+
 hist(y_all, breaks = 25, freq = FALSE,
      col = "gray85", border = "white",
      xlab = "Loss Given Default (LGD)",
      ylab = "Density", main = "", las = 1,
-     ylim = c(0, 10), xlim = c(0, 1))
-lines(dens_x, dens_y * (1 - prop_one) * (1 / max(dens_obj$x)),
+     ylim = c(0, ylim_top), xlim = c(0, 1))
+lines(dens_x, dens_pl,
       col = "gray30", lwd = 2)
 segments(x0 = pin_x, x1 = pin_x, y0 = 0, y1 = pin_height,
          col = "gray30", lwd = 2)
@@ -200,11 +207,18 @@ if (has_zeta) {
       width = img_width, height = img_height, res = img_res)
   old_par <- par(mar = c(4.5, 4.5, 2, 2))
   zeta_tab <- table(unlist(zeta_best_vec))
+  # Sem ylim explícito, barplot() para as marcas no último valor "bonito"
+  # abaixo do máximo, deixando o eixo vertical abaixo do topo da barra.
+  # Fixa o topo no próximo múltiplo de 10 acima da barra mais alta.
+  ytop_z   <- max(10 * ceiling(max(zeta_tab) / 10), n_success)
+  ticks_z  <- seq(0, ytop_z, by = 10)
   barplot(zeta_tab,
           xlab = expression(zeta),
           ylab = "Number of CV entries",
           col = "gray85", border = "gray30",
-          las = 1, main = "")
+          las = 1, main = "",
+          ylim = c(0, ytop_z), yaxt = "n")
+  axis(2, at = ticks_z, las = 1)
   abline(h = 0, col = "gray60")
   legend("topright",
          legend = paste0("Most selected: zeta = ",
