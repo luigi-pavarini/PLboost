@@ -5,21 +5,29 @@ rm(list = ls())
 # ==============================================================================
 # SETUP
 # ==============================================================================
-base_path <- NULL  # not needed: the implementation now ships as the PLboost package
-save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")  # set PLBOOST_OUT or run from the repo root
-source(file.path(base_path, "essentials", "families_PL.R"))
+# ---- setup -------------------------------------------------------------------
+library(PLboost)
+save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # results go to $PLBOOST_OUT/PL_simulations/
+dir.create(file.path(save_path, "PL_simulations"), showWarnings = FALSE, recursive = TRUE)
 
 require("PLreg")
 require("gamboostLSS")
 require("gamlss")
 require("faux")
+require("parallel")
+
+# Parallel cross-validation (mclapply reads options("mc.cores")). Each core forks
+# a full copy of the p=1000 model, so 8 cores is memory-hungry: run with other
+# apps closed. If R still gets killed mid-loop, drop to 4 or 2 — the checkpoint
+# below lets a rerun continue from where it stopped either way.
+options(mc.cores = 10)
 
 # M          = 100
 # n          = 800
 # p          = 1000
 # fam        = 'SN'
-# mstop_init = 500 
-# m_stop_cv  = 800 
+# mstop_init = 500
+# m_stop_cv  = 800
 # nu         = 0.01
 
 M          = 100
@@ -94,8 +102,19 @@ nvar_lambda <- NULL
 # SIMULATION LOOP
 # ==============================================================================
 
-i = 1
-k = 0
+# ---- checkpoint: resume a run that was killed mid-loop (e.g. out of memory) ----
+# After every successful replication the accumulators, the fixed design X, the
+# derived mu/sigma, the counters i/k and the RNG state are saved. If the script
+# is rerun and a checkpoint for this family exists, it picks up where it stopped
+# instead of starting over. The file is deleted once all M replications finish.
+ckpt_file <- file.path(save_path, "PL_simulations", paste0(".ckpt_", fam, ".RData"))
+if (file.exists(ckpt_file)) {
+  message("Resuming from checkpoint: ", ckpt_file)
+  load(ckpt_file)
+} else {
+  i <- 1
+  k <- 0
+}
 while(i <= M){
   tryCatch({
     k = k + 1  
@@ -135,10 +154,13 @@ while(i <= M){
                                                  nu = nu, trace = FALSE),
                          center = TRUE)
     
+    # off2int = TRUE folds each submodel's offset into its intercept (mboost
+    # coef.glmboost), so stored intercepts are the fitted values predict() uses.
+    # Slopes are unchanged; the lambda intercept becomes exp(offset + coef) below.
     coefi <- coef(model, off2int = TRUE)
-    estimativas_mu[, i]     <- coef(model, which = "")$mu
-    estimativas_sigma[, i]  <- coef(model, which = "")$sigma
-    estimativas_lambda[, i] <- coef(model, which = "")$lambda
+    estimativas_mu[, i]     <- coef(model, which = "", off2int = TRUE)$mu
+    estimativas_sigma[, i]  <- coef(model, which = "", off2int = TRUE)$sigma
+    estimativas_lambda[, i] <- coef(model, which = "", off2int = TRUE)$lambda
     
     # Count how many boosting iterations each variable was selected in this run
     sel_mu    <- table(selected(model$mu))
@@ -160,8 +182,16 @@ while(i <= M){
     print(paste("i =", i))
     i = i + 1
     print(paste("k =", k))
-    
+
+    # checkpoint after each success so an OOM kill loses at most one replication
+    save(estimativas_mu, estimativas_sigma, estimativas_lambda,
+         freq_mu_mat, freq_sigma_mat, m_stop,
+         nvar_mu, nvar_sigma, nvar_lambda,
+         X, mu, sigma, lambda, i, k, .Random.seed,
+         file = ckpt_file)
+
   }, error = function(e){ cat("ERROR :", conditionMessage(e), "\n") })
+  gc()
 }
 
 # ==============================================================================
@@ -185,157 +215,4 @@ sim <- list(
 
 sim_name <- paste0("sim_PL_M", M, "_mstop", mstop_init, "_", fam, ".RData")
 save(sim, file = file.path(save_path, "PL_simulations", sim_name))
-load(file.path(save_path, "PL_simulations", sim_name))
-
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_NO.RData"))
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_TF.RData"))
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_LO.RData"))
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop500_SN.RData"))
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_PE.RData"))
-#load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_Hyp.RData"))
-load(file.path(save_path, "PL_simulations", "sim_PL_M100_mstop100_SLASH.RData"))
-
-# ==============================================================================
-# VISUALIZATION
-# Column order: (Intercept)[1] | V1[2]...V1000[1001]
-# mu    true: V1[2], V2[3], V3[4], V4[5]           non-inf: [c(6:1001),]
-# sigma true: V3[4], V4[5], V5[6], V6[7]           non-inf: [c(2:3, 8:1001),]
-# ==============================================================================
-
-# Stopping iterations
-boxplot(sim$m_stop[1,], sim$m_stop[2,], sim$m_stop[3,],
-        names = c("mu", "sigma", "lambda"),
-        ylab = "Stopping iterations")
-
-# ---- Mu coefficients ----
-boxplot(sim$est_mu[2,], sim$est_mu[3,], sim$est_mu[4,],
-        sim$est_mu[5,], c(sim$est_mu[c(6:1001),]),
-        ylim = c(-1.2, 0.5), xaxt = "n", las = 1,
-        ylab = expression("Coefficients for" ~ eta[mu]),
-        main = "" #PL Model - Mu Parameter"
-        )
-abline(h = 0, lty = 2, col = "gray")
-axis(1, 1, expression(X[1]))
-axis(1, 2, expression(X[2]))
-axis(1, 3, expression(X[3]))
-axis(1, 4, expression(X[4]))
-axis(1, 5, "non-inf.")
-segments(x0 = 0.5, x1 = 1.5, y0 = -0.99, y1 = -0.99, lty = 2, col = "red4")
-segments(x0 = 1.5, x1 = 2.5, y0 =  0.49, y1 =  0.49, lty = 2, col = "red4")
-segments(x0 = 2.5, x1 = 3.5, y0 = -1.17, y1 = -1.17, lty = 2, col = "red4")
-segments(x0 = 3.5, x1 = 4.5, y0 =  0.38, y1 =  0.38, lty = 2, col = "red4")
-segments(x0 = 4.5, x1 = 5.5, y0 =  0,    y1 =  0,    lty = 2, col = "red4")
-
-# ---- Sigma coefficients ----
-# beta_sigma = c(0, 0, -0.41, -0.24, 0.81, 0.70, 0...) -> V3[4], V4[5], V5[6], V6[7] are true
-boxplot(sim$est_sigma[4,], sim$est_sigma[5,], sim$est_sigma[6,],
-        sim$est_sigma[7,], c(sim$est_sigma[c(2:3, 8:1001),]),
-        ylim = c(-0.70, 1.00), xaxt = "n", las = 1,
-        ylab = expression("Coefficients for" ~ eta[sigma]),
-        main = "" #"PL Model - Sigma Parameter"
-        )
-abline(h = 0, lty = 2, col = "gray")
-axis(1, 1, expression(X[3]))
-axis(1, 2, expression(X[4]))
-axis(1, 3, expression(X[5]))
-axis(1, 4, expression(X[6]))
-axis(1, 5, "non-inf.")
-segments(x0 = 0.5, x1 = 1.5, y0 = -0.41, y1 = -0.41, lty = 2, col = "red4")
-segments(x0 = 1.5, x1 = 2.5, y0 = -0.24, y1 = -0.24, lty = 2, col = "red4")
-segments(x0 = 2.5, x1 = 3.5, y0 =  0.81, y1 =  0.81, lty = 2, col = "red4")
-segments(x0 = 3.5, x1 = 4.5, y0 =  0.70, y1 =  0.70, lty = 2, col = "red4")
-segments(x0 = 4.5, x1 = 5.5, y0 =  0,    y1 =  0,    lty = 2, col = "red4")
-
-# ---- Lambda ----
-boxplot(exp(sim$est_lambda[1,]), ylim = c(0, 10), xaxt = "n", las = 1,
-        ylab = expression("Coefficients for" ~ lambda),
-        main = "" #"PL Model - Lambda Parameter"
-        )
-abline(h = 0, lty = 2, col = "gray")
-axis(1, 1, "exp(intercept)")
-segments(x0 = 0.5, x1 = 1.5, y0 = 1.2, y1 = 1.2, lty = 2, col = "red4")
-
-# ==============================================================================
-# LOLLIPOP PLOTS
-# - Each column (run) is normalized to proportions first (don't mix samples)
-# - Then average proportion across M runs is computed
-# - Error bars show +/- sd_mult * sd across runs  (default: 1)
-# - Stems: solid gray; error bars: dashed steel blue
-# - Top 15 variables shown individually; rest collapsed into "others"
-# ==============================================================================
-
-lollipop_sel <- function(freq_mat, top_n = 15, param_label = "mu", sd_mult = 1) {
-  
-  # Step 1: normalize each run (column) to proportions — avoids mixing samples
-  # Proportion of replications in which each covariate was selected at least once.
-  # (Previously this normalized each run's selection COUNTS to sum to 1, a share of
-  #  the boosting update budget rather than a selection frequency.)
-  sel_mat  <- (freq_mat > 0)[-1, , drop = FALSE]
-  avg_prop <- rowMeans(sel_mat)
-  sd_prop  <- sqrt(avg_prop * (1 - avg_prop) / M)   # binomial standard error
-  
-  # Step 3: select top_n by average proportion
-  ord       <- order(avg_prop, decreasing = TRUE)[seq_len(top_n)]
-  top_avg   <- avg_prop[ord]
-  top_sd    <- sd_prop[ord]
-  top_names <- names(top_avg)
-  
-  # Step 4: collapse remaining into "others"
-  others_avg <- mean(avg_prop[-ord])
-  others_sd  <- sd(avg_prop[-ord])
-  
-  p_plot   <- c(top_avg, others_avg)
-  sd_plot  <- c(top_sd,  others_sd)
-  lbl_plot <- c(top_names, "others")
-  n_plot   <- top_n + 1
-  
-  # Step 5: axis label
-  xlab_expr <- switch(param_label,
-                      mu    = expression("Proportion of replications selected" ~ eta[mu]),
-                      sigma = expression("Proportion of replications selected" ~ eta[sigma])
-  )
-  
-  # Step 6: plot
-  old_par <- par(mar = c(4, 6, 3, 2))
-  
-  x_max <- max(p_plot + sd_mult * sd_plot, na.rm = TRUE) * 1.15
-  
-  plot(p_plot, seq_len(n_plot),
-       ylim = c(n_plot, 1),
-       xlim = c(0, x_max),
-       yaxt = "n",
-       xlab = xlab_expr,
-       ylab = "",
-       main = "",#paste0("PL Model - Top ", top_n, " selected (", param_label, ")"),
-       pch  = 19, col = "gray30", cex = 1.3)
-  
-  # Lollipop stems: light dashed gray
-  segments(x0 = 0, x1 = p_plot,
-           y0 = seq_len(n_plot), y1 = seq_len(n_plot),
-           col = "gray80", lwd = 0.8, lty = 2)
-  
-  # Error bars: sd_mult * sd, solid steel blue
-  x_lo <- pmax(p_plot - sd_mult * sd_plot, 0)
-  x_hi <- p_plot + sd_mult * sd_plot
-  cap  <- 0.18  # vertical cap half-height in plot units
-  
-  # Horizontal bar
-  segments(x0 = x_lo, x1 = x_hi,
-           y0 = seq_len(n_plot), y1 = seq_len(n_plot),
-           col = "#4682B4", lwd = 1.4)
-  # Left cap
-  segments(x0 = x_lo, x1 = x_lo,
-           y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
-           col = "#4682B4", lwd = 1.4)
-  # Right cap
-  segments(x0 = x_hi, x1 = x_hi,
-           y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
-           col = "#4682B4", lwd = 1.4)
-  
-  axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 0.85)
-  abline(v = 0, col = "gray60", lty = 2)
-  par(old_par)
-}
-
-lollipop_sel(sim$freq_sel_mu,    top_n = 15, param_label = "mu",    sd_mult = 1)
-lollipop_sel(sim$freq_sel_sigma, top_n = 15, param_label = "sigma", sd_mult = 1)
+cat("\nSaved:", file.path(save_path, "PL_simulations", sim_name), "\n")
