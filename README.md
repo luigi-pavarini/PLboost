@@ -97,21 +97,26 @@ is distributed on GitHub rather than CRAN.
 
 ## Reproducing the dissertation
 
-The [`reproduce/`](reproduce) directory holds the scripts behind the results, and is not
-part of the installed package.
+The [`reproduce/`](reproduce) directory holds the scripts behind every table and figure
+of the dissertation, and is not part of the installed package.
 
 | Directory | What it produces |
 |---|---|
-| `ch2_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood, on simulated data where both are feasible (Tables 2.3 to 2.5) |
-| `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel |
-| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, inflated PL) and `inep/` (Conceito Enade course quality, plain PL) |
+| `ch2_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario: `validation_multirep.R` writes `validation_results.csv`, and `make_tables.py` turns it into Tables 2.3 (PL) and 2.4 (IPL). Seeded, so a rerun gives the published numbers |
+| `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel: `simulation_PL.R` (run once per generator, set `fam`) and `simulation_IPL.R` store the results; the scripts in `figures/` draw every figure of Chapter 3 from them |
+| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, inflated PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce/ch4_application/DATA.md) |
 
 Scripts write their output to the directory given by the `PLBOOST_OUT` environment
 variable, defaulting to the working directory:
 
 ```bash
-PLBOOST_OUT=~/plboost-output Rscript reproduce/ch2_validation/validation_PL.R
+PLBOOST_OUT=~/plboost-output Rscript reproduce/ch2_validation/validation_multirep.R
+PLBOOST_OUT=~/plboost-output python3 reproduce/ch2_validation/make_tables.py
 ```
+
+The Chapter 3 simulations are not seeded: a rerun gives statistically equivalent
+results, not the same digits. The figure scripts reproduce the published figures exactly
+from the stored `.RData` results.
 
 The credit data is not redistributed here; see
 [`reproduce/ch4_application/DATA.md`](reproduce/ch4_application/DATA.md).
