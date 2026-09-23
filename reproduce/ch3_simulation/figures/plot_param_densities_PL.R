@@ -39,7 +39,7 @@ img_res    <- 330
 save_path  <- file.path(base_path, "PL_simulations", "0_param_densities")
 dir.create(save_path, showWarnings = FALSE, recursive = TRUE)
 
-# ---- Simulation constants (must match luigi_experimentations_PL.r) ----------
+# ---- Simulation constants (must match simulation_PL.R) ----------
 n      <- 800
 p      <- 1000
 lambda <- 1.2

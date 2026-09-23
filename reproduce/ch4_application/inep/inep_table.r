@@ -20,11 +20,11 @@ suppressMessages({library(gridExtra); library(grid)})
 }
 
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path, "cross_val", "results")
 out_png      <- file.path(app_path, "cross_val", "imgs", "NO", "plot_table_comparison.png")
 
-source(file.path(app_path, "essentials", "cv_load.R"))
+source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
 
 prefix   <- "sim_results_medicina_SP"
 fams     <- c("NO", "TF", "LO", "PE", "SN", "SLASH", "Hyp", "Beta")

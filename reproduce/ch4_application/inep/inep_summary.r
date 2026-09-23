@@ -24,7 +24,7 @@
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 app_name     <- "inep_appl"
 prefix       <- "sim_results_medicina_SP"            # load_cv_results prefix (matches inep_run_cv_10rep.r output)
 family_order <- c("NO", "TF", "LO", "PE", "SN", "SLASH", "Hyp", "Beta")
@@ -33,8 +33,8 @@ R_REPEATS    <- 10
 # ─────────────────────────────────────────────────────────────────────────────
 
 results_path <- file.path(app_path, "cross_val", "results")
-source(file.path(app_path, "essentials", "cv_load.R"))
-source(file.path(app_path, "essentials", "cv_summary.R"))
+source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
+source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 
 TOTAL_ENTRIES <- K_FOLDS * R_REPEATS                         # 50 = error-bar population
 

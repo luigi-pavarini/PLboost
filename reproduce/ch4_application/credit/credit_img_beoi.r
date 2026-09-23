@@ -22,7 +22,7 @@ fam          <- "Beta"   # used only for the imgs/<fam> output folder name
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path, "cross_val", "results")
 base_path    <- file.path(app_path, "cross_val", "imgs", fam)
 if (!dir.exists(base_path)) dir.create(base_path, recursive = TRUE)
@@ -33,7 +33,7 @@ img_height <- 2000
 img_res    <- 330
 rel_dim    <- 1.8
 
-source(file.path(app_path, "essentials", "cv_load.R"))
+source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
 
 cv          <- load_cv_results(results_path, "sim_results_credit_VT", "BEOI")
 sim_results <- cv$sim_results

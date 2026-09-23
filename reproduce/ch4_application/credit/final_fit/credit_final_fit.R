@@ -21,12 +21,11 @@
 library(data.table); library(mboost); library(gamboostLSS)
 library(gamlss.dist); library(EnvStats); library(parallel)
 
-app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain essentials/ and data/
+app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain data/
 out_path <- file.path(app_path, "final_fit")
 dir.create(out_path, showWarnings = FALSE)
 
-source(file.path(app_path, "essentials", "families_IPL.R"))
-source(file.path(app_path, "essentials", "IPL_distributions.R"))
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
 
 # ---- dados, identico ao credit_run.r --------------------------------
 load(file.path(app_path, "data", "df_lgd_all.RData"))

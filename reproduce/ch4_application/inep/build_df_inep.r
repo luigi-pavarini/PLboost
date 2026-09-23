@@ -42,8 +42,9 @@ library(readxl)
 }
 
 
-app_path  <- dirname(.script_dir())
+app_path  <- Sys.getenv("PLBOOST_OUT", unset = ".")   # raw INEP files in, df_medicina_SP.RData out, both under data/
 data_path <- file.path(app_path, "data")
+dir.create(data_path, showWarnings = FALSE, recursive = TRUE)
 
 AREA_FILTER <- "MEDICINA"
 UF_FILTER   <- "SP"

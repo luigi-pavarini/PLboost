@@ -40,11 +40,11 @@ library(caret)
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path,"cross_val", "results")
 
-source(file.path(app_path, "essentials", "families_PL.R"))
-source(file.path(app_path, "essentials", "cv_summary.R"))
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 load(file.path(app_path, "data", "df_medicina_SP.RData"))
 
 cat("Loaded df_inep — rows:", nrow(df_inep), " cols:", ncol(df_inep), "\n")

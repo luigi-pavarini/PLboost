@@ -36,7 +36,7 @@ img_res    <- 330
 save_path <- file.path(base_path, "IPL_simulations", "0_param_densities")
 dir.create(save_path, showWarnings = FALSE, recursive = TRUE)
 
-# ---- Simulation constants (must match luigi_experimentations_IPL_n.R) -------
+# ---- Simulation constants (must match simulation_IPL.R) -------
 n     <- 800
 p     <- 1000   # V1...V1000; alpha uses V999 and V1000
 zeta  <- 2

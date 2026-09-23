@@ -19,7 +19,7 @@
 library(data.table); library(mboost); library(gamboostLSS)
 library(gamlss.dist); library(parallel)
 
-app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain essentials/ and data/
+app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain data/
 out_path <- file.path(app_path, "final_fit")
 
 # ---- dados, identico ao credit_run.r --------------------------------

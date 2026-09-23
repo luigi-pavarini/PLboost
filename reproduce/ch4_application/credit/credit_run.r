@@ -1,13 +1,13 @@
 # ==============================================================================
 # credit_run_cv.R
 # IPL boosted regression on LGD (Vermont) — 5-FOLD CROSS-VALIDATION
-# Per Felipe's spec: one random partition into 5 groups; each group is the test
+# Design: one random partition into 5 groups; each group is the test
 # set once; the CV result is the MEAN of the 5 fold metrics (RMSE, MAE, Upsilon).
 #
 #   Outer  : R_REPEATS x 5-fold partitions, STRATIFIED on the inflation indicator
 #            (lgd == 1 vs lgd in (0,1)) so every fold keeps the ~60/40 mix.
 #            Folds disjoint & exhaustive. DEFAULT R_REPEATS = 1 (single pass,
-#            exactly as Felipe described). The repeat structure is left settable:
+#            as specified for the dissertation). The repeat structure is left settable:
 #            raise R_REPEATS only if repeated CV is agreed with him.
 #   Inner  : cvrisk() still selects mstop on each fold's 4/5 training data
 #            (nested CV — no leakage into the held-out fold).
@@ -38,11 +38,11 @@ library(caret)
 }
 
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain essentials/ and data/)
+app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path,"cross_val", "results")
 
-source(file.path(app_path, "essentials", "families_IPL.R"))
-source(file.path(app_path, "essentials", "cv_summary.R"))
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 load(file.path(app_path, "data", "df_lgd_all.RData"))
 
 # ==============================================================================
@@ -134,7 +134,7 @@ compute_upsilon_beoi <- function(y, mu, sigma) {
 # ==============================================================================
 # CROSS-VALIDATION SETTINGS
 # ==============================================================================
-K_FOLDS      <- 5           # Felipe's spec: 5-fold (test ~64, train ~256 / fold)
+K_FOLDS      <- 5           # 5-fold (test ~64, train ~256 / fold)
 R_REPEATS    <- 10          # REPEATED CV — 10 passes of the 5-fold partition.
 
 # ── RUN IN TWO BATCHES — quit & reopen R between them to reset memory creep ──
@@ -171,7 +171,7 @@ TOTAL_ENTRIES <- K_FOLDS * R_REPEATS                       # error bars computed
 BATCH_ENTRIES <- (REPEAT_END - REPEAT_START + 1L) * K_FOLDS # entries produced by THIS batch
 
 cat("\n################################################################\n")
-cat("# credit VT —", K_FOLDS, "-fold CV", if (R_REPEATS > 1) "(repeated)" else "(single pass, per Felipe)", "\n")
+cat("# credit VT —", K_FOLDS, "-fold CV", if (R_REPEATS > 1) "(repeated)" else "(single pass)", "\n")
 cat("#   folds (k)   :", K_FOLDS, " -> test ~", round(nrow(df_lgd)/K_FOLDS),
     "obs/fold, train ~", round(nrow(df_lgd) - nrow(df_lgd)/K_FOLDS), "obs/fold\n")
 cat("#   repeats (R) :", R_REPEATS, "  (each = one full", K_FOLDS, "-fold partition)\n")
