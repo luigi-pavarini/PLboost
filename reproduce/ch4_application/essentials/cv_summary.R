@@ -9,9 +9,9 @@
 #      longer has to be saved by hand (this is what the old "1rep results.rtf"
 #      was — now produced automatically and in a paste-ready format).
 #
-# One helper serves both runs (PL = itagrade, IPL = credit). Metric fields are
+# One helper serves both runs (PL = itagrade, APL = credit). Metric fields are
 # coalesced by name, so it does not matter whether an entry stores its squared
-# error under error_pl / error_ipl / error_beta / error_beoi (same for MAE).
+# error under error_pl / error_apl / error_beta / error_beoi (same for MAE).
 #
 # Arguments
 #   results_containers : named list of per-family result lists (NULL = failed fit)
@@ -32,9 +32,9 @@
 
 # (mse x100, mae, upsilon) for one (repeat, fold) result entry
 cv_metrics <- function(entry) {
-  c(mse100  = .cv_first(entry, c("error_pl", "error_ipl",
+  c(mse100  = .cv_first(entry, c("error_pl", "error_apl",
                                  "error_beta", "error_beoi")) * 100,
-    mae     = .cv_first(entry, c("mae_pl", "mae_ipl",
+    mae     = .cv_first(entry, c("mae_pl", "mae_apl",
                                  "mae_beta", "mae_beoi")),
     upsilon = entry$upsilon)
 }

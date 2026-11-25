@@ -1,6 +1,6 @@
 # ==============================================================================
-# credit_img_ipl_cv.R
-# Visualization script for the Credit LGD IPL application — CV version.
+# credit_img_apl.r
+# Visualization script for the Credit LGD APL application — CV version.
 # Reads the 5-fold CV outputs (sim_results_credit_VT_cv_<FAM>_<batch>.RData) via
 # load_cv_results(), which globs and merges EVERY batch tag (_1, _2, _3, ...);
 # credit's three batches (repeats 1-3 / 4-6 / 7-10) are pooled automatically, so
@@ -11,7 +11,7 @@
 # n_entries available — no hardcoded 100.
 # ==============================================================================
 
-fam          <- "TF"   # model reported in the dissertation (IPL-t); also NO, LO, PE, SN, SLASH, Hyp
+fam          <- "TF"   # model reported in the dissertation (APL-t); also NO, LO, PE, SN, SLASH, Hyp
 # --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {
@@ -20,6 +20,7 @@ fam          <- "TF"   # model reported in the dissertation (IPL-t); also NO, LO
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }
@@ -65,8 +66,8 @@ all_test_df <- all_test_df[!duplicated(all_test_df$idx), ]
 y_all       <- all_test_df$y
 
 # Derived quantities
-errors_ipl    <- sapply(sim_results, function(x) x$error_ipl) * 100
-mae_ipl       <- sapply(sim_results, function(x) x$mae_ipl)
+errors_apl    <- sapply(sim_results, function(x) x$error_apl) * 100
+mae_apl       <- sapply(sim_results, function(x) x$mae_apl)
 upsilon_vec   <- sapply(sim_results, function(x) x$upsilon)
 zeta_best_vec <- sapply(sim_results, function(x) x$zeta_best)
 all_ytest     <- unlist(lapply(sim_results, function(x) x$y_test))
@@ -148,14 +149,14 @@ dev.off()
 png(file.path(base_path, "plot_mse_dist.png"),
     width = img_width, height = img_height, res = img_res)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(errors_ipl, ylab = expression("MSE" %*% 100),
+boxplot(errors_apl, ylab = expression("MSE" %*% 100),
         xaxt = "n", col = "gray85", border = "gray30",
         las = 1, outline = TRUE, main = "")
-axis(1, at = 1, labels = "IPL")
-abline(h = mean(errors_ipl), lty = 2, col = "red4", lwd = 1.5)
+axis(1, at = 1, labels = "APL")
+abline(h = mean(errors_apl), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(errors_ipl), 3),
-                       "   SD = ", round(sd(errors_ipl), 3)),
+       legend = paste0("Mean = ", round(mean(errors_apl), 3),
+                       "   SD = ", round(sd(errors_apl), 3)),
        bty = "n", cex = 0.85)
 par(old_par)
 dev.off()
@@ -167,14 +168,14 @@ dev.off()
 png(file.path(base_path, "plot_mae_dist.png"),
     width = img_width, height = img_height, res = img_res)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(mae_ipl, ylab = "MAE",
+boxplot(mae_apl, ylab = "MAE",
         xaxt = "n", col = "gray85", border = "gray30",
         las = 1, outline = TRUE, main = "")
-axis(1, at = 1, labels = "IPL")
-abline(h = mean(mae_ipl), lty = 2, col = "red4", lwd = 1.5)
+axis(1, at = 1, labels = "APL")
+abline(h = mean(mae_apl), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(mae_ipl), 4),
-                       "   SD = ", round(sd(mae_ipl), 4)),
+       legend = paste0("Mean = ", round(mean(mae_apl), 4),
+                       "   SD = ", round(sd(mae_apl), 4)),
        bty = "n", cex = 0.85)
 par(old_par)
 dev.off()
@@ -189,7 +190,7 @@ old_par <- par(mar = c(4.5, 4.5, 2, 2))
 boxplot(upsilon_vec, ylab = expression(Upsilon),
         xaxt = "n", col = "gray85", border = "gray30",
         las = 1, outline = TRUE, main = "")
-axis(1, at = 1, labels = "IPL")
+axis(1, at = 1, labels = "APL")
 abline(h = mean(upsilon_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
        legend = paste0("Mean = ", round(mean(upsilon_vec), 4),
@@ -306,7 +307,7 @@ boxplot(lambda_hat_vec,
         xaxt = "n", col = "gray85", border = "gray30",
         las = 1, outline = TRUE, main = "",
         ylim = c(lam_r[1] - lam_pad, lam_r[2] + lam_pad))
-axis(1, at = 1, labels = "IPL")
+axis(1, at = 1, labels = "APL")
 abline(h = mean(lambda_hat_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
        legend = paste0("Mean = ", round(mean(lambda_hat_vec), 3),
@@ -329,7 +330,7 @@ dy         <- dens_alpha$y[in_range]
 ylim_top   <- max(dy) * 1.10
 hist(all_alpha_hat, breaks = 20, freq = FALSE,
      col = "gray85", border = "white",
-     xlab = expression("Predicted inflation probability  " * hat(alpha)),
+     xlab = expression("Predicted boundary probability  " * hat(alpha)),
      ylab = "Density", main = "", las = 1,
      xlim = c(0, 1), ylim = c(0, ylim_top))
 lines(dx, dy, col = "gray30", lwd = 2)
@@ -364,7 +365,7 @@ plot(all_muhat, all_alpha_hat,
      pch = 19, cex = 0.3,
      col = adjustcolor("gray30", alpha.f = 0.15),
      xlab = expression("Predicted median  " * hat(mu)),
-     ylab = expression("Predicted inflation probability  " * hat(alpha)),
+     ylab = expression("Predicted boundary probability  " * hat(alpha)),
      las = 1, main = "")
 polygon(c(mu_seq, rev(mu_seq)),
         c(lo_hi,  rev(lo_lo)),
@@ -428,7 +429,8 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
 
   png(filename, width = img_width * rel_dim,
       height = max(img_height, 55 * n + 150), res = img_res)
-  old_par <- par(mar = c(4.5, 11, 2, 3))
+  old_par <- par(cex.axis = 1.5, cex.lab = 1.7)
+  par(mar = c(5, max(strwidth(orig, "inches", cex = 1.4)) / par("csi") + 1.2, 0.5, 1))
   plot(NA, xlim = x_range, ylim = c(0.5, n + 0.5),
        yaxt = "n", xlab = xlab_expr, ylab = "", main = "", las = 1)
   abline(v = 0, col = "gray60", lty = 2)
@@ -452,7 +454,7 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
        col = rect_col, border = col_bord, lwd = 0.6)
   points(avg, seq_len(n), pch = 22, col = col_bord,
          bg = "white", cex = 1.3, lwd = 1.2)
-  axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 0.78)
+  axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 1.4)
   legend(legend_pos,
          legend = c("\u00b11 SD body (positive)", "\u00b11 SD body (negative)",
                     "\u00b11.645 SD solid (positive)", "\u00b11.645 SD solid (negative)",
@@ -464,7 +466,7 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
          col    = c(NA, NA, col_pos_90, col_neg_90, col_bord, col_bord),
          pch    = c(NA, NA, NA, NA, NA, 22),
          pt.bg  = c(NA, NA, NA, NA, NA, "white"),
-         pt.cex = 1.3, bty = "n", cex = 0.80)
+         pt.cex = 1.3, bty = "n", cex = 1.1)
   par(old_par)
   dev.off()
 }
@@ -501,7 +503,8 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   )
 
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
-  old_par <- par(mar = c(4, 12, 2, 2))
+  old_par <- par(cex.axis = 1.5, cex.lab = 1.7)
+  par(mar = c(5, max(strwidth(lbl_plot, "inches", cex = 1.44)) / par("csi") + 1.2, 0.5, 1))
   x_max   <- max(p_plot + sd_mult * sd_plot, na.rm = TRUE) * 1.15
   plot(p_plot, seq_len(n_plot),
        ylim = c(n_plot, 1), xlim = c(0, x_max),
@@ -522,7 +525,7 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   segments(x0 = x_hi, x1 = x_hi,
            y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
            col = "#4682B4", lwd = 1.4)
-  axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 0.80)
+  axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 1.44)
   abline(v = 0, col = "gray60", lty = 2)
   par(old_par)
   dev.off()
@@ -531,7 +534,7 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
 # ---- mu ---------------------------------------------------------------------
 plot_coef_forest(coef_mu_mat, var_dict, "mu",
                  filename = file.path(base_path, "plot_coef_mu.png"),
-                 legend_pos = "bottomleft")
+                 legend_pos = "bottomright")
 lollipop_sel_app(coef_mu_mat, var_dict, top_n = 15, param_label = "mu",
                  filename = file.path(base_path, "plot_sel_mu.png"))
 
@@ -553,7 +556,7 @@ lollipop_sel_app(coef_alpha_mat, var_dict, top_n = 15, param_label = "alpha",
 
 cat("\n")
 cat("================================================================\n")
-cat("  CREDIT LGD APPLICATION (Vermont) — IPL SUMMARY\n")
+cat("  CREDIT LGD APPLICATION (Vermont) — APL SUMMARY\n")
 cat("================================================================\n\n")
 
 cat("--- Dataset (Vermont only) ---\n")
@@ -568,16 +571,16 @@ cat("  lgd SD                 :", round(sd(y_all), 4), "\n")
 cat("  Proportion lgd = 1     :", round(mean(y_all == 1) * 100, 1), "%\n\n")
 
 cat("--- Prediction performance (", n_success, "CV entries) ---\n")
-cat("  Mean MSE x 100         :", round(mean(errors_ipl), 3), "\n")
-cat("  SD   MSE x 100         :", round(sd(errors_ipl), 3), "\n")
-cat("  Min  MSE x 100         :", round(min(errors_ipl), 3), "\n")
-cat("  Max  MSE x 100         :", round(max(errors_ipl), 3), "\n\n")
+cat("  Mean MSE x 100         :", round(mean(errors_apl), 3), "\n")
+cat("  SD   MSE x 100         :", round(sd(errors_apl), 3), "\n")
+cat("  Min  MSE x 100         :", round(min(errors_apl), 3), "\n")
+cat("  Max  MSE x 100         :", round(max(errors_apl), 3), "\n\n")
 
 cat("--- MAE (test set) ---\n")
-cat("  Mean MAE               :", round(mean(mae_ipl), 4), "\n")
-cat("  SD   MAE               :", round(sd(mae_ipl), 4), "\n")
-cat("  Min  MAE               :", round(min(mae_ipl), 4), "\n")
-cat("  Max  MAE               :", round(max(mae_ipl), 4), "\n\n")
+cat("  Mean MAE               :", round(mean(mae_apl), 4), "\n")
+cat("  SD   MAE               :", round(sd(mae_apl), 4), "\n")
+cat("  Min  MAE               :", round(min(mae_apl), 4), "\n")
+cat("  Max  MAE               :", round(max(mae_apl), 4), "\n\n")
 
 cat("--- Upsilon (train set, continuous part) ---\n")
 cat("  Mean Upsilon           :", round(mean(upsilon_vec), 4), "\n")

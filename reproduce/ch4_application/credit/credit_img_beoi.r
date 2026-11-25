@@ -18,6 +18,7 @@ fam          <- "Beta"   # used only for the imgs/<fam> output folder name
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }

@@ -1,4 +1,4 @@
-# Boosted IPL regression — Parameter density plots (single scenario: low)
+# Boosted APL regression — Parameter density plots (single scenario: low)
 
 rm(list = ls())
 
@@ -13,6 +13,7 @@ rm(list = ls())
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }
@@ -33,10 +34,10 @@ img_width  <- 2000
 img_height <- 2000
 img_res    <- 330
 
-save_path <- file.path(base_path, "IPL_simulations", "0_param_densities")
+save_path <- file.path(base_path, "APL_simulations", "0_param_densities")
 dir.create(save_path, showWarnings = FALSE, recursive = TRUE)
 
-# ---- Simulation constants (must match simulation_IPL.R) -------
+# ---- Simulation constants (must match simulation_APL.R) -------
 n     <- 800
 p     <- 1000   # V1...V1000; alpha uses V999 and V1000
 zeta  <- 2
@@ -102,7 +103,7 @@ sigma_true <- exp(eta_sigma_true)
 alpha_true <- pmax(pmin(plogis(eta_alpha_true), 1 - 1e-6), 1e-6)
 
 set.seed(101)
-y_true <- rIPL(
+y_true <- rAPL(
   n      = n,
   mu     = as.vector(mu_true),
   sigma  = as.vector(sigma_true),
@@ -265,4 +266,4 @@ lines(d_alpha$x, d_alpha$y, col = "gray30", lwd = 2)
 par(old_par)
 dev.off()
 
-message("All IPL parameter-density plots saved to: ", save_path)
+message("All APL parameter-density plots saved to: ", save_path)

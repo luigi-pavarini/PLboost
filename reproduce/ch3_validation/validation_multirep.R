@@ -1,7 +1,7 @@
 # ==============================================================================
 # validation_multirep.R
 #
-# Multi-replication version of the Chapter 2 validation (boosting vs MLE).
+# Multi-replication validation of Chapter 3, Sections 3.1 and 3.2 (boosting vs MLE).
 # Each scenario is now repeated over M Monte Carlo replications and the tables
 # report mean (standard deviation) across replications instead of a single fit.
 #
@@ -10,8 +10,9 @@
 # rerun reproduces the dissertation tables exactly.
 #
 # Writes to $PLBOOST_OUT (default: the working directory):
-#   val_pl.tex, val_ipl_continuous.tex, val_ipl_alpha.tex   (cells are "mean (sd)")
+#   val_pl.tex, val_apl_continuous.tex, val_apl_alpha.tex   (cells are "mean (sd)")
 #   validation_results.md, validation_results.csv            (raw numbers)
+#   validation_replications.csv   (one row per replication, for appendixA_boxplots.R)
 #
 # Requires: PLboost, gamboostLSS, mboost, faux, PLreg, Formula.
 # Run:  Rscript validation_multirep.R
@@ -38,14 +39,14 @@ nu           <- 0.01
 n_pl         <- 500        # PL validation sample size  (low-dim, MLE feasible)
 mstop_pl     <- 800
 
-n_ipl        <- 800        # IPL validation sample size.
+n_apl        <- 800        # APL validation sample size.
                            #   800 so the
-                           #   LOW-inflation scenario (alpha in [0.047,0.142]) has
+                           #   low boundary-mass scenario (alpha in [0.047,0.142]) has
                            #   enough boundary observations to fit the alpha submodel.
                            #   Lower it here if you want, but expect the low scenario
                            #   to fail in many reps below ~500.
-mstop_ipl    <- 1000
-c_infl       <- 1          # inflation at the upper boundary (mass at 1)
+mstop_apl    <- 1000
+c_infl       <- 1          # point mass at the upper boundary (c = 1)
 p_alpha      <- 2
 
 set.seed(123)
@@ -60,7 +61,7 @@ pick <- function(v, k, default = 0) if (k %in% names(v)) as.numeric(v[[k]]) else
 label_of <- function(k) {
   if (grepl("Intercept", k)) return("Intercept")
   if (grepl("^V[0-9]+$", k)) return(sprintf("$x_%s$", sub("^V", "", k)))
-  if (grepl("^U[0-9]+$", k)) return(sprintf("$u_%s$", sub("^U", "", k)))
+  if (grepl("^U[0-9]+$", k)) return(sprintf("$t_%s$", sub("^U", "", k)))
   k
 }
 normalise_intercept <- function(x) {
@@ -71,7 +72,8 @@ agg <- function(mat) list(mean = colMeans(mat, na.rm = TRUE),
                           nok  = colSums(!is.na(mat)),
                           # proportion of replications with a non-zero estimate
                           # (for boosting this is the selection frequency)
-                          selfreq = colMeans(abs(mat) > 1e-10, na.rm = TRUE))
+                          selfreq = colMeans(abs(mat) > 1e-10, na.rm = TRUE),
+                          raw = mat)   # one row per replication, for the Appendix A boxplots
 
 # ======================= PL VALIDATION =======================================
 mu_keys  <- c("(Intercept)", "V1", "V2", "V3", "V4")
@@ -103,7 +105,7 @@ fit_pl_rep <- function(bmu, bsig) {
   # PLreg estime o parametro em vez de receber o valor verdadeiro pronto.
   # Antes ele era informado, e por isso a coluna da MLE saia igual ao valor
   # verdadeiro, com desvio padrao zero: nao era estimativa, era a resposta
-  # copiada, e a comparacao com o boosting nao dizia nada. O IPL da secao 2.5
+  # copiada, e a comparacao com o boosting nao dizia nada. O APL da secao 2.5
   # sempre estimou, entao as duas validacoes estavam inconsistentes.
   mr <- PLreg::PLreg(y ~ V1 + V2 + V3 + V4 | V3 + V4 + V5, data = dat,
                      family = fam, zeta = zeta)
@@ -193,8 +195,8 @@ writeLines(c(
   file.path(this_dir, "val_pl.tex"))
 cat("wrote val_pl.tex\n")
 
-# ======================= IPL VALIDATION ======================================
-family_ipl <- IPL(family = fam, stabilization = "MAD", c = c_infl, zeta = zeta)
+# ======================= APL VALIDATION ======================================
+family_apl <- APL(family = fam, stabilization = "MAD", c = c_infl, zeta = zeta)
 
 IPLreg <- function(formula, data, family, zeta = 2, type = "ML", c) {
   of <- Formula(formula); mf <- model.frame(of, data = data)
@@ -207,28 +209,28 @@ IPLreg <- function(formula, data, family, zeta = 2, type = "ML", c) {
 }
 
 al_keys <- c("(Intercept)", "U1", "U2")
-beta_mu_ipl  <- c(-0.99, 0.49, -1.17, 0.38, 0)   # V1..V5
-beta_sig_ipl <- c(0, 0, -0.41, -0.24, 0.81)
-true_mu_ipl  <- c("(Intercept)"=0.5, V1=-0.99, V2=0.49, V3=-1.17, V4=0.38)
-true_sig_ipl <- c("(Intercept)"=0.0, V3=-0.41, V4=-0.24, V5=0.81)
+beta_mu_apl  <- c(-0.99, 0.49, -1.17, 0.38, 0)   # V1..V5
+beta_sig_apl <- c(0, 0, -0.41, -0.24, 0.81)
+true_mu_apl  <- c("(Intercept)"=0.5, V1=-0.99, V2=0.49, V3=-1.17, V4=0.38)
+true_sig_apl <- c("(Intercept)"=0.0, V3=-0.41, V4=-0.24, V5=0.81)
 
-fit_ipl_rep <- function(kappa) {   # kappa = c(intercept, U1coef, U2coef)
-  X <- rnorm_multi(n_ipl, vars = 5, mu = rep(0, 5), sd = rep(1, 5), r = 0.5,
+fit_apl_rep <- function(kappa) {   # kappa = c(intercept, U1coef, U2coef)
+  X <- rnorm_multi(n_apl, vars = 5, mu = rep(0, 5), sd = rep(1, 5), r = 0.5,
                    varnames = paste0("V", 1:5), empirical = FALSE)
   Xm <- as.matrix(X)
-  Xa <- matrix(runif(n_ipl * p_alpha), nrow = n_ipl); colnames(Xa) <- paste0("U", 1:p_alpha)
-  eta_mu  <- 0.5 + Xm %*% beta_mu_ipl
-  eta_sig <- 0.0 + Xm %*% beta_sig_ipl
+  Xa <- matrix(runif(n_apl * p_alpha), nrow = n_apl); colnames(Xa) <- paste0("U", 1:p_alpha)
+  eta_mu  <- 0.5 + Xm %*% beta_mu_apl
+  eta_sig <- 0.0 + Xm %*% beta_sig_apl
   mu  <- pmax(pmin(plogis(eta_mu), 1 - 1e-6), 1e-6); sig <- exp(eta_sig)
   eta_a <- kappa[1] + Xa %*% kappa[-1]; alpha <- plogis(eta_a)
-  y <- rIPL(n = n_ipl, mu = mu, sigma = sig, lambda = lambda_true,
+  y <- rAPL(n = n_apl, mu = mu, sigma = sig, lambda = lambda_true,
             alpha = alpha, family = fam, zeta = zeta, c = c_infl)
   dat <- data.frame(y = y, Xa, X)
 
   mb <- glmboostLSS(list(mu = y ~ V1 + V2 + V3 + V4, sigma = y ~ V3 + V4 + V5,
                          lambda = y ~ 1, alpha = y ~ U1 + U2),
-                    data = dat, families = family_ipl,
-                    control = boost_control(mstop = mstop_ipl, nu = nu, trace = FALSE))
+                    data = dat, families = family_apl,
+                    control = boost_control(mstop = mstop_apl, nu = nu, trace = FALSE))
   b_mu  <- normalise_intercept(coef(mb, parameter = "mu",     off2int = TRUE))
   b_sig <- normalise_intercept(coef(mb, parameter = "sigma",  off2int = TRUE))
   b_lam <- as.numeric(unlist(coef(mb, parameter = "lambda",   off2int = TRUE)))
@@ -256,11 +258,11 @@ fit_ipl_rep <- function(kappa) {   # kappa = c(intercept, U1coef, U2coef)
   )
 }
 
-run_ipl_scenario <- function(kappa, tag) {
-  cat(sprintf(">>> IPL %s : %d reps\n", tag, M))
+run_apl_scenario <- function(kappa, tag) {
+  cat(sprintf(">>> APL %s : %d reps\n", tag, M))
   B <- M2 <- NULL; ok <- 0
   for (m in seq_len(M)) {
-    r <- tryCatch(fit_ipl_rep(kappa), error = function(e) NULL)
+    r <- tryCatch(fit_apl_rep(kappa), error = function(e) NULL)
     if (is.null(r)) next
     B <- rbind(B, r$boost); M2 <- rbind(M2, r$mle); ok <- ok + 1
     if (m %% 10 == 0) cat("   ", m, "\n")
@@ -276,11 +278,11 @@ true_al_high <- c("(Intercept)"=-0.8, U1=0.4, U2=-0.4)
 true_al_med  <- c("(Intercept)"=-1.5, U1=0.70, U2=-0.3)
 true_al_low  <- c("(Intercept)"=-2.5, U1=0.7, U2=-0.5)
 
-ih <- run_ipl_scenario(kap_high, "High inflation")
-im <- run_ipl_scenario(kap_med,  "Medium inflation")
-il <- run_ipl_scenario(kap_low,  "Low inflation")
+ih <- run_apl_scenario(kap_high, "High boundary mass")
+im <- run_apl_scenario(kap_med,  "Medium boundary mass")
+il <- run_apl_scenario(kap_low,  "Low boundary mass")
 
-# ---- val_ipl_continuous.tex (mu, sigma, lambda; true common) ----------------
+# ---- val_apl_continuous.tex (mu, sigma, lambda; true common) ----------------
 c3 <- function(sc, key) {
   if (!key %in% names(sc$mean)) return("---")
   fmt(sc$mean[[key]], sc$sd[[key]])
@@ -292,10 +294,10 @@ cont_row <- function(lead, kd, kk, tv)
           c3(il$boost,kk), c3(il$mle,kk))
 rows <- c()
 for (i in seq_along(mu_keys)) { k<-mu_keys[i]; rows<-c(rows,
-  cont_row(if(i==1)"$\\eta_\\mu$" else "", k, paste0("mu.",k), true_mu_ipl[[k]])) }
+  cont_row(if(i==1)"$\\eta_\\mu$" else "", k, paste0("mu.",k), true_mu_apl[[k]])) }
 rows <- c(rows, "\\midrule")
 for (i in seq_along(sig_keys)) { k<-sig_keys[i]; rows<-c(rows,
-  cont_row(if(i==1)"$\\eta_\\sigma$" else "", k, paste0("sig.",k), true_sig_ipl[[k]])) }
+  cont_row(if(i==1)"$\\eta_\\sigma$" else "", k, paste0("sig.",k), true_sig_apl[[k]])) }
 rows <- c(rows, "\\midrule",
   sprintf("$\\log\\lambda$ & & %s & %s & %s & %s & %s & %s & %s \\\\",
           fmt1(log(lambda_true)),
@@ -310,10 +312,10 @@ writeLines(c(
   "\\cmidrule(lr){4-5}\\cmidrule(lr){6-7}\\cmidrule(lr){8-9}",
   "Submodel & Coefficient & True & Boost. & MLE & Boost. & MLE & Boost. & MLE \\\\",
   "\\midrule", rows, "\\bottomrule", "\\end{tabular}", "}"),
-  file.path(this_dir, "val_ipl_continuous.tex"))
-cat("wrote val_ipl_continuous.tex\n")
+  file.path(this_dir, "val_apl_continuous.tex"))
+cat("wrote val_apl_continuous.tex\n")
 
-# ---- val_ipl_alpha.tex (row block per scenario) -----------------------------
+# ---- val_apl_alpha.tex (row block per scenario) -----------------------------
 al_block <- function(label, tv, sc) {
   out <- c()
   for (i in seq_along(al_keys)) {
@@ -329,12 +331,12 @@ writeLines(c(
   "{\\footnotesize",
   "\\begin{tabular}{llrrr}", "\\toprule",
   "Scenario & Coefficient & True & Boosting & MLE \\\\", "\\midrule",
-  al_block("High inflation",   true_al_high, ih), "\\midrule",
-  al_block("Medium inflation", true_al_med,  im), "\\midrule",
-  al_block("Low inflation",    true_al_low,  il), "\\bottomrule",
+  al_block("High boundary mass",   true_al_high, ih), "\\midrule",
+  al_block("Medium boundary mass", true_al_med,  im), "\\midrule",
+  al_block("Low boundary mass",    true_al_low,  il), "\\bottomrule",
   "\\end{tabular}", "}"),
-  file.path(this_dir, "val_ipl_alpha.tex"))
-cat("wrote val_ipl_alpha.tex\n")
+  file.path(this_dir, "val_apl_alpha.tex"))
+cat("wrote val_apl_alpha.tex\n")
 
 # ---- machine-readable dump of every replication summary ---------------------
 dump_rows <- function(tag, sc, truth) {
@@ -356,18 +358,18 @@ tv_pl <- function(tmu, tsig) {
          setNames(as.numeric(tsig[sig_keys]), paste0("sig.", sig_keys)),
          lambda = log(lambda_true)); v
 }
-tv_ipl <- function(tal) {
-  c(setNames(as.numeric(true_mu_ipl[mu_keys]),   paste0("mu.",  mu_keys)),
-    setNames(as.numeric(true_sig_ipl[sig_keys]), paste0("sig.", sig_keys)),
+tv_apl <- function(tal) {
+  c(setNames(as.numeric(true_mu_apl[mu_keys]),   paste0("mu.",  mu_keys)),
+    setNames(as.numeric(true_sig_apl[sig_keys]), paste0("sig.", sig_keys)),
     lambda = log(lambda_true),
     setNames(as.numeric(tal[al_keys]), paste0("al.", al_keys)))
 }
 allrows <- rbind(
   dump_rows("PL Scenario 1",        pl1, tv_pl(true_mu_1, true_sig_1)),
   dump_rows("PL Scenario 2",        pl2, tv_pl(true_mu_2, true_sig_2)),
-  dump_rows("IPL High inflation",   ih,  tv_ipl(true_al_high)),
-  dump_rows("IPL Medium inflation", im,  tv_ipl(true_al_med)),
-  dump_rows("IPL Low inflation",    il,  tv_ipl(true_al_low)))
+  dump_rows("APL High boundary mass",   ih,  tv_apl(true_al_high)),
+  dump_rows("APL Medium boundary mass", im,  tv_apl(true_al_med)),
+  dump_rows("APL Low boundary mass",    il,  tv_apl(true_al_low)))
 write.csv(allrows, file.path(this_dir, "validation_results.csv"), row.names = FALSE)
 cat("wrote validation_results.csv\n")
 
@@ -377,8 +379,8 @@ md <- c(
   "",
   sprintf("- Gerado em: %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
   sprintf("- Réplicas Monte Carlo: M = %d", M),
-  sprintf("- PL  (§2.4): n = %d, mstop = %d, nu = %.3f, família PL-%s", n_pl, mstop_pl, nu, fam),
-  sprintf("- IPL (§2.5): n = %d, mstop = %d, nu = %.3f, massa em c = %d", n_ipl, mstop_ipl, nu, c_infl),
+  sprintf("- PL  (§3.1): n = %d, mstop = %d, nu = %.3f, família PL-%s", n_pl, mstop_pl, nu, fam),
+  sprintf("- APL (§3.2): n = %d, mstop = %d, nu = %.3f, massa em c = %d", n_apl, mstop_apl, nu, c_infl),
   sprintf("- λ verdadeiro = %.2f (log λ = %.3f); λ é ESTIMADO tanto no boosting quanto na MLE",
           lambda_true, log(lambda_true)),
   "",
@@ -403,7 +405,28 @@ for (tag in unique(allrows$scenario)) {
 writeLines(md, file.path(this_dir, "validation_results.md"))
 cat("wrote validation_results.md\n")
 
-cat(sprintf("\n>>> done. M=%d | PL n=%d mstop=%d | IPL n=%d mstop=%d\n",
-            M, n_pl, mstop_pl, n_ipl, mstop_ipl))
-cat(sprintf("    reps ok: PL(%d,%d)  IPL(H=%d,M=%d,L=%d)\n",
+# ---- estimates per replication, long format, for the Appendix A boxplots -----
+long_rows <- function(tag, sc) {
+  do.call(rbind, lapply(c("boost", "mle"), function(est) {
+    mat <- sc[[est]]$raw
+    data.frame(scenario    = tag,
+               estimator   = est,
+               replication = rep(seq_len(nrow(mat)), times = ncol(mat)),
+               coefficient = rep(colnames(mat), each = nrow(mat)),
+               estimate    = as.vector(mat),
+               row.names = NULL, stringsAsFactors = FALSE)
+  }))
+}
+write.csv(rbind(
+  long_rows("PL Scenario 1",               pl1),
+  long_rows("PL Scenario 2",               pl2),
+  long_rows("APL High boundary mass",      ih),
+  long_rows("APL Medium boundary mass",    im),
+  long_rows("APL Low boundary mass",       il)),
+  file.path(this_dir, "validation_replications.csv"), row.names = FALSE)
+cat("wrote validation_replications.csv\n")
+
+cat(sprintf("\n>>> done. M=%d | PL n=%d mstop=%d | APL n=%d mstop=%d\n",
+            M, n_pl, mstop_pl, n_apl, mstop_apl))
+cat(sprintf("    reps ok: PL(%d,%d)  APL(H=%d,M=%d,L=%d)\n",
             pl1$ok, pl2$ok, ih$ok, im$ok, il$ok))

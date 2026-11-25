@@ -1,7 +1,7 @@
 # =============================================================================
-# Inflated Power Logit (IPL) Distribution Functions
+# Adjusted Power Logit (APL) Distribution Functions
 # =============================================================================
-# These functions implement the d/p/q/r functions for the Inflated Power Logit
+# These functions implement the d/p/q/r functions for the Adjusted Power Logit
 # distribution, which is a mixture between a point mass at c (0 or 1) and a
 # Power Logit (PL) distribution.
 #
@@ -10,36 +10,36 @@
 #   P(Y <= y)  = alpha * I(y >= c) + (1 - alpha) * pPL(y, ...)   for y in (0,1)
 #
 # Parameters:
-#   alpha  : probability of inflation at c (scalar or vector in (0,1))
+#   alpha  : probability of the point mass at c (scalar or vector in (0,1))
 #   mu     : median of the PL component (scalar or vector in (0,1))
 #   sigma  : dispersion of the PL component (scalar or vector > 0)
 #   lambda : skewness of the PL component (scalar >= 0)
 #   zeta   : extra parameter for the PL family (scalar, default = 2, > 0)
 #   family : "NO", "TF", "LO", "PE", "SN", "Hyp", "SLASH"
-#   c      : inflation point, either 0 or 1
+#   c      : boundary point, either 0 or 1
 # =============================================================================
 
 
-#' Inflated Power Logit Distribution
+#' Adjusted Power Logit Distribution
 #'
 #' Density, distribution function, quantile function and random generation
-#' for the Inflated Power Logit (IPL) distribution.
+#' for the Adjusted Power Logit (APL) distribution.
 #'
 #' @param x,q vector of quantiles in [0,1].
 #' @param p vector of probabilities in [0,1].
 #' @param n number of observations.
-#' @param alpha vector of inflation probabilities (point mass at c), in (0,1).
+#' @param alpha vector of boundary probabilities (point mass at c), in (0,1).
 #' @param mu vector of medians of the PL component, in (0,1).
 #' @param sigma vector of dispersion parameters of the PL component (> 0).
 #' @param lambda scalar skewness parameter of the PL component (>= 0).
 #' @param zeta scalar extra parameter (> 0). Default is 2.
 #' @param family string specifying the PL family: "NO", "TF", "LO", "PE", "SN", "Hyp", "SLASH".
-#' @param c inflation point: either 0 or 1.
+#' @param c boundary point: either 0 or 1.
 #' @param log,log.p logical; if TRUE, probabilities are given as log(p). Default is FALSE.
 #' @param lower.tail logical; if TRUE (default), probabilities are P(X <= x).
 #'
 #' @details
-#' The IPL distribution is a mixture:
+#' The APL distribution is a mixture:
 #' \itemize{
 #'   \item With probability \code{alpha}, Y = c (point mass).
 #'   \item With probability \code{1 - alpha}, Y follows a PL distribution.
@@ -51,33 +51,33 @@
 #'   \item If c = 1: F(y) = (1 - alpha) * pPL(y, ...) for y in [0,1), and F(1) = 1.
 #' }
 #'
-#' For \code{dIPL}, observations at y = c return \code{alpha} (the point mass probability).
+#' For \code{dAPL}, observations at y = c return \code{alpha} (the point mass probability).
 #'
-#' @name IPL
+#' @name APL
 #' @examples
-#' # Zero-inflated PL, normal family
-#' dIPL(c(0, 0.3, 0.5, 1), alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1,
+#' # PL with a point mass at zero, normal family
+#' dAPL(c(0, 0.3, 0.5, 1), alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1,
 #'      family = "NO", c = 0)
 #'
 #' # CDF
-#' pIPL(0.5, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
+#' pAPL(0.5, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
 #'
 #' # Quantile
-#' qIPL(0.7, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
+#' qAPL(0.7, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
 #'
 #' # Random generation
 #' set.seed(42)
-#' y <- rIPL(1000, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
+#' y <- rAPL(1000, alpha = 0.3, mu = 0.5, sigma = 1, lambda = 1, family = "NO", c = 0)
 #' hist(y[y > 0], prob = TRUE, main = "Continuous component", breaks = 20)
 #' mean(y == 0) # should be close to 0.3
 
 
 # -----------------------------------------------------------------------------
-# dIPL: density (with point mass at c)
+# dAPL: density (with point mass at c)
 # -----------------------------------------------------------------------------
-#' @rdname IPL
+#' @rdname APL
 #' @export
-dIPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
+dAPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  log = FALSE) {
   
   if (!(c %in% c(0, 1)))
@@ -99,7 +99,7 @@ dIPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
   in_cont <- (x > 0 & x < 1 & !at_c)
   outside <- (x < 0 | x > 1)
   
-  # At the inflated point: return alpha (the point mass probability)
+  # At the boundary point: return alpha (the point mass probability)
   dens[at_c] <- alpha[at_c]
   
   # In the continuous (0,1) interior: (1 - alpha) * dPL(x, ...)
@@ -120,11 +120,11 @@ dIPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
 
 
 # -----------------------------------------------------------------------------
-# pIPL: CDF
+# pAPL: CDF
 # -----------------------------------------------------------------------------
-#' @rdname IPL
+#' @rdname APL
 #' @export
-pIPL <- function(q, alpha, mu, sigma, lambda, zeta = 2, family, c,
+pAPL <- function(q, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  lower.tail = TRUE, log.p = FALSE) {
   
   if (!(c %in% c(0, 1)))
@@ -197,11 +197,11 @@ pIPL <- function(q, alpha, mu, sigma, lambda, zeta = 2, family, c,
 
 
 # -----------------------------------------------------------------------------
-# qIPL: quantile function
+# qAPL: quantile function
 # -----------------------------------------------------------------------------
-#' @rdname IPL
+#' @rdname APL
 #' @export
-qIPL <- function(p, alpha, mu, sigma, lambda, zeta = 2, family, c,
+qAPL <- function(p, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  lower.tail = TRUE, log.p = FALSE) {
   
   if (!(c %in% c(0, 1)))
@@ -264,11 +264,11 @@ qIPL <- function(p, alpha, mu, sigma, lambda, zeta = 2, family, c,
 
 
 # -----------------------------------------------------------------------------
-# rIPL: random generation
+# rAPL: random generation
 # -----------------------------------------------------------------------------
-#' @rdname IPL
+#' @rdname APL
 #' @export
-rIPL <- function(n, alpha, mu, sigma, lambda, zeta = 2, family, c) {
+rAPL <- function(n, alpha, mu, sigma, lambda, zeta = 2, family, c) {
   
   if (!(c %in% c(0, 1)))
     stop("c must be either 0 or 1.")
@@ -282,19 +282,19 @@ rIPL <- function(n, alpha, mu, sigma, lambda, zeta = 2, family, c) {
   mu     <- rep_len(mu,    n)
   sigma  <- rep_len(sigma, n)
   
-  # Indicator: is this observation inflated?
-  inflated <- rbinom(n, size = 1, prob = alpha) == 1
+  # Indicator: is this observation at the boundary?
+  at_boundary <- rbinom(n, size = 1, prob = alpha) == 1
   
   r <- numeric(n)
   
-  # Inflated observations take value c
-  r[inflated] <- c
+  # Boundary observations take value c
+  r[at_boundary] <- c
   
-  # Non-inflated observations come from PL
-  n_cont <- sum(!inflated)
-  r[!inflated] <- rPL(n_cont,
-                      mu     = mu[!inflated],
-                      sigma  = sigma[!inflated],
+  # The remaining observations come from PL
+  n_cont <- sum(!at_boundary)
+  r[!at_boundary] <- rPL(n_cont,
+                      mu     = mu[!at_boundary],
+                      sigma  = sigma[!at_boundary],
                       lambda = lambda,
                       zeta   = zeta,
                       family = family)

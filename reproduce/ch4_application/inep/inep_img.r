@@ -1,11 +1,11 @@
 # ==============================================================================
 # inep_img_pl_cv.r
 # Visualization for the INEP MEDICINA/SP Conceito Enade (Continuo) application.
-# Power-Logit (PL) CV version. STYLE MATCHES credit_img_ipl_cv_10rep.r exactly
+# Power-Logit (PL) CV version. STYLE MATCHES credit_img_apl.r exactly
 # (2000x2000, rel_dim 1.8, gray85/red4 palette, per-family imgs/<fam> folder,
 # same plot names) so the two applications are visually consistent in the paper /
-# dissertation. PL differences vs the IPL script: fields are error_pl / mae_pl,
-# lambda ~ 1 (scalar shape), and there is NO inflation parameter -> the alpha
+# dissertation. PL differences vs the APL script: fields are error_pl / mae_pl,
+# lambda ~ 1 (scalar shape), and there is NO boundary probability -> the alpha
 # plots (plot_alpha_dist, plot_alpha_vs_mu, coef/sel alpha) are dropped.
 # Set `fam` to switch family; winner = "PE".
 # ==============================================================================
@@ -21,6 +21,7 @@ fam          <- "NO"   # ← NO, TF, LO, PE, SN, SLASH, Hyp  (featured family = 
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }
@@ -47,7 +48,7 @@ n_success <- length(sim_results)
 cat("Family =", fam, "| successful CV entries:", n_success, "\n")
 
 # ==============================================================================
-# HELPERS  (identical to the IPL script; alpha removed)
+# HELPERS  (identical to the APL script; alpha removed)
 # ==============================================================================
 # English labels for the figures.  Keyed on the stable V-codes (dict$new_name)
 # rather than on orig_name, so the lookup stays ASCII and locale-proof.
@@ -234,7 +235,7 @@ par(op); dev.off()
 
 # ==============================================================================
 # PLOTS 6-9: Coefficient forests + selection lollipops (mu, sigma)
-#            (verbatim styling from the IPL forest/lollipop functions)
+#            (verbatim styling from the APL forest/lollipop functions)
 # ==============================================================================
 plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
                              min_freq = 0.10, filename, legend_pos = "bottomright") {
@@ -258,7 +259,8 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
   col_bord <- "#2a2a2a"; x_range <- range(c(ci95_lo, ci95_hi, 0)) * 1.15
   x_range[1] <- min(x_range[1], -0.01)
   png(filename, width = img_width * rel_dim, height = max(img_height, 55*n + 150), res = img_res)
-  op <- par(mar = c(4.5, 11, 2, 3))
+  op <- par(cex.axis = 1.5, cex.lab = 1.7)
+  par(mar = c(5, max(strwidth(orig, "inches", cex = 1.4)) / par("csi") + 1.2, 0.5, 1))
   plot(NA, xlim = x_range, ylim = c(0.5, n + 0.5), yaxt = "n",
        xlab = xlab_expr, ylab = "", main = "", las = 1)
   abline(v = 0, col = "gray60", lty = 2)
@@ -271,7 +273,19 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
   rect(ci68_lo, seq_len(n) - rect_half, ci68_hi, seq_len(n) + rect_half,
        col = rect_col, border = col_bord, lwd = 0.6)
   points(avg, seq_len(n), pch = 22, col = col_bord, bg = "white", cex = 1.3, lwd = 1.2)
-  axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 0.78)
+  axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 1.4)
+  legend(legend_pos,
+         legend = c("\u00b11 SD body (positive)", "\u00b11 SD body (negative)",
+                    "\u00b11.645 SD solid (positive)", "\u00b11.645 SD solid (negative)",
+                    "\u00b11.960 SD dotted T", "Mean"),
+         fill   = c(col_pos, col_neg, NA, NA, NA, NA),
+         border = c(col_bord, col_bord, NA, NA, NA, NA),
+         lty    = c(NA, NA, 1, 1, 3, NA),
+         lwd    = c(NA, NA, 1.4, 1.4, 1.4, NA),
+         col    = c(NA, NA, col_pos_90, col_neg_90, col_bord, col_bord),
+         pch    = c(NA, NA, NA, NA, NA, 22),
+         pt.bg  = c(NA, NA, NA, NA, NA, "white"),
+         pt.cex = 1.3, bty = "n", cex = 1.1)
   par(op); dev.off()
 }
 
@@ -291,7 +305,8 @@ lollipop_sel <- function(coef_mat, var_dict, top_n = 15, param_label = "mu", fil
   xlab_expr <- if (param_label == "mu") expression("Proportion of folds selected" ~ eta[mu]) else
                                         expression("Proportion of folds selected" ~ eta[sigma])
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
-  op <- par(mar = c(4, 12, 2, 2)); xm <- max(p + s, na.rm = TRUE) * 1.15
+  op <- par(cex.axis = 1.5, cex.lab = 1.7)
+  par(mar = c(5, max(strwidth(lbl, "inches", cex = 1.44)) / par("csi") + 1.2, 0.5, 1)); xm <- max(p + s, na.rm = TRUE) * 1.15
   plot(p, seq_len(np), ylim = c(np, 1), xlim = c(0, xm), yaxt = "n",
        xlab = xlab_expr, ylab = "", main = "", pch = 19, col = "gray30", cex = 1.3)
   segments(0, seq_len(np), p, seq_len(np), col = "gray80", lwd = 0.8, lty = 2)
@@ -299,13 +314,13 @@ lollipop_sel <- function(coef_mat, var_dict, top_n = 15, param_label = "mu", fil
   segments(xlo, seq_len(np), xhi, seq_len(np), col = "#4682B4", lwd = 1.4)
   segments(xlo, seq_len(np) - cap, xlo, seq_len(np) + cap, col = "#4682B4", lwd = 1.4)
   segments(xhi, seq_len(np) - cap, xhi, seq_len(np) + cap, col = "#4682B4", lwd = 1.4)
-  axis(2, at = seq_len(np), labels = lbl, las = 1, cex.axis = 0.80)
+  axis(2, at = seq_len(np), labels = lbl, las = 1, cex.axis = 1.44)
   par(op); dev.off()
 }
 
-plot_coef_forest(coef_mu_mat,    var_dict, "mu",    filename = file.path(base_path, "plot_coef_mu.png"), legend_pos = "bottomleft")
+plot_coef_forest(coef_mu_mat,    var_dict, "mu",    filename = file.path(base_path, "plot_coef_mu.png"), legend_pos = "bottomright")
 lollipop_sel(   coef_mu_mat,    var_dict, 15, "mu",    filename = file.path(base_path, "plot_sel_mu.png"))
-plot_coef_forest(coef_sigma_mat, var_dict, "sigma", filename = file.path(base_path, "plot_coef_sigma.png"))
+plot_coef_forest(coef_sigma_mat, var_dict, "sigma", filename = file.path(base_path, "plot_coef_sigma.png"), legend_pos = "bottomleft")
 lollipop_sel(   coef_sigma_mat, var_dict, 15, "sigma", filename = file.path(base_path, "plot_sel_sigma.png"))
 
 cat("\nSaved plots to:", base_path, "\n"); print(list.files(base_path))

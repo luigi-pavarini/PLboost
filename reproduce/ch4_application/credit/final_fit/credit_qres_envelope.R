@@ -1,6 +1,6 @@
 # ==============================================================================
 # credit_qres_envelope.R
-# Three quantile-residual panels for the final IPL-TF fit, each with a
+# Three quantile-residual panels for the final APL-TF fit, each with a
 # simulated envelope obtained by REFITTING (Atkinson's envelope: minimum and
 # maximum over B replicates simulated from the fitted model).
 #
@@ -22,7 +22,7 @@ library(gamlss.dist); library(EnvStats); library(parallel)
 
 app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain data/
 out_path <- file.path(app_path, "final_fit")
-library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 load(file.path(out_path, "credit_final_fit.RData"))   # fit, mu_h, sg_h, lb_h, al_h, zeta_best, opt, df_lgd
 
 FAM <- "TF"; C_INFL <- 1; nu <- 0.001
@@ -32,7 +32,7 @@ n <- length(y)
 cat("n =", n, " B =", B, " zeta =", zeta_best, "\n")
 
 fit_at <- function(dat) {
-  assign("fam", IPL(family = FAM, stabilization = "MAD", c = C_INFL, zeta = zeta_best),
+  assign("fam", APL(family = FAM, stabilization = "MAD", c = C_INFL, zeta = zeta_best),
          envir = globalenv())
   glmboostLSS(formula = list(mu = lgd ~ ., sigma = lgd ~ .,
                              lambda = lgd ~ 1, alpha = lgd ~ .),
@@ -56,7 +56,7 @@ res3 <- function(yy, mu, sg, lb, al) {
                    lambda = lb, zeta = zeta_best, family = FAM))
   # (c) mistura
   r_j <- numeric(length(yy))
-  r_j[!at_c] <- qn(pIPL(yy[!at_c], alpha = al[!at_c], mu = mu[!at_c],
+  r_j[!at_c] <- qn(pAPL(yy[!at_c], alpha = al[!at_c], mu = mu[!at_c],
                            sigma = sg[!at_c], lambda = lb, zeta = zeta_best,
                            family = FAM, c = C_INFL))
   r_j[at_c]  <- qn(runif(sum(at_c), 1 - al[at_c], 1))
@@ -76,7 +76,7 @@ sim <- list(disc = matrix(NA_real_, n, B),
             joint = matrix(NA_real_, n, B))
 t0 <- Sys.time(); ok <- 0
 for (b in seq_len(B)) {
-  ys <- rIPL(n = n, alpha = al_h, mu = mu_h, sigma = sg_h,
+  ys <- rAPL(n = n, alpha = al_h, mu = mu_h, sigma = sg_h,
              lambda = lb_h, zeta = zeta_best, family = FAM, c = C_INFL)
   ys <- pmin(pmax(ys, 1e-6), 1)
   d2 <- copy(df_lgd); d2[, lgd := ys]

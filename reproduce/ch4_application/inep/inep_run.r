@@ -5,8 +5,8 @@
 #
 # Response is OPEN on (0,1): tx = Conceito Enade / 5 (strictly interior on
 # MEDICINA/SP, no boundary obs, so no squeeze needed). No point mass, so we drop
-# the old one-inflated
-# apparatus (IPL c=1 / BEOI / inflation-stratified folds) and use:
+# the point-mass apparatus of the credit application (APL c=1 / BEOI /
+# boundary-stratified folds) and use:
 #
 #   * PowerLogit(): the 3-parameter PL family (mu, sigma, lambda), each
 #     regressed on all predictors -> 3 * p coefficients. With p=19 this is
@@ -36,6 +36,7 @@ library(caret)
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }
@@ -43,7 +44,7 @@ library(caret)
 app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path,"cross_val", "results")
 
-library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 load(file.path(app_path, "data", "df_medicina_SP.RData"))
 

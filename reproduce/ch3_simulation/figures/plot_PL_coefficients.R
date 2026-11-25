@@ -2,7 +2,7 @@
 # (2000x1450) so all six families fit on a single condensed page in the thesis.
 # Lollipop PNGs are left untouched (they stay in the 3+3 layout).
 
-save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and IPL_simulations/ with the .RData
+save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and APL_simulations/ with the .RData
 families  <- c("NO", "TF", "LO", "PE", "Hyp", "SLASH")
 BOX_W <- 2000; BOX_H <- 2000   # square, matching the rest of the document
 
@@ -24,8 +24,8 @@ for (fam in families) {
             c(sim$est_mu[c(6:1001),]), ylim = c(-1.2, 0.5), xaxt = "n", las = 1,
             ylab = expression("Coefficients for" ~ eta[mu]), main = "")
     abline(h = 0, lty = 2, col = "gray")
-    axis(1, 1, expression(X[1])); axis(1, 2, expression(X[2]))
-    axis(1, 3, expression(X[3])); axis(1, 4, expression(X[4])); axis(1, 5, "non-inf.")
+    axis(1, 1, expression(x[1])); axis(1, 2, expression(x[2]))
+    axis(1, 3, expression(x[3])); axis(1, 4, expression(x[4])); axis(1, 5, "non-inf.")
     segments(0.5, -0.99, 1.5, -0.99, lty = 2, col = "red4")
     segments(1.5,  0.49, 2.5,  0.49, lty = 2, col = "red4")
     segments(2.5, -1.17, 3.5, -1.17, lty = 2, col = "red4")
@@ -39,8 +39,8 @@ for (fam in families) {
             c(sim$est_sigma[c(2:3, 8:1001),]), ylim = c(-0.70, 1.00), xaxt = "n", las = 1,
             ylab = expression("Coefficients for" ~ eta[sigma]), main = "")
     abline(h = 0, lty = 2, col = "gray")
-    axis(1, 1, expression(X[3])); axis(1, 2, expression(X[4]))
-    axis(1, 3, expression(X[5])); axis(1, 4, expression(X[6])); axis(1, 5, "non-inf.")
+    axis(1, 1, expression(x[3])); axis(1, 2, expression(x[4]))
+    axis(1, 3, expression(x[5])); axis(1, 4, expression(x[6])); axis(1, 5, "non-inf.")
     segments(0.5, -0.41, 1.5, -0.41, lty = 2, col = "red4")
     segments(1.5, -0.24, 2.5, -0.24, lty = 2, col = "red4")
     segments(2.5,  0.81, 3.5,  0.81, lty = 2, col = "red4")

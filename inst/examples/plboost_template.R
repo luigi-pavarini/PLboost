@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
 # --- data ---
 
 # df <- ... (a data.frame with response + covariates)
-# PL is for y in (0,1). If your data has 0/1, use IPL.
+# PL is for y in (0,1). If your data has 0/1, use APL.
 # y <- ...  # must be your response variable (e.g. "lgd")
 
 # --- settings ---

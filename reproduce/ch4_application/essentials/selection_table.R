@@ -10,18 +10,18 @@
 #
 # Usage (from the repository root, PLBOOST_OUT as for the figure scripts):
 #   PLBOOST_OUT=... Rscript reproduce/ch4_application/essentials/selection_table.R \
-#       reproduce/ch4_application/credit/credit_img_ipl.r
+#       reproduce/ch4_application/credit/credit_img_apl.r
 #   PLBOOST_OUT=... Rscript reproduce/ch4_application/essentials/selection_table.R \
 #       reproduce/ch4_application/inep/inep_img.r
 #
 # The figure script is sourced first because it builds the coefficient matrices
-# (coef_mu_mat, coef_sigma_mat and, for the inflated model, coef_alpha_mat);
+# (coef_mu_mat, coef_sigma_mat and, for the adjusted model, coef_alpha_mat);
 # its figures are regenerated as a side effect.
 # Output: $PLBOOST_OUT/cross_val/selection_table.csv and selection_table.tex
 # ==============================================================================
 
 img_script <- commandArgs(trailingOnly = TRUE)[1]
-if (is.na(img_script)) stop("pass the figure script (credit_img_ipl.r or inep_img.r)")
+if (is.na(img_script)) stop("pass the figure script (credit_img_apl.r or inep_img.r)")
 source(img_script)
 
 mats <- list(mu = coef_mu_mat, sigma = coef_sigma_mat)

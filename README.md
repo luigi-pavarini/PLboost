@@ -1,18 +1,21 @@
 # PLboost
 
 Gradient boosting families for the **power logit (PL)** class of distributions and its
-inflated extension (**IPL**), for regression with a response bounded on the unit interval.
+adjusted extension (**APL**), for regression with a response bounded on the unit interval.
 
 The package supplies `Families` objects compatible with
 [**gamboostLSS**](https://cran.r-project.org/package=gamboostLSS), so the median,
-dispersion, skewness and (in the inflated case) boundary-probability submodels are
+dispersion, skewness and (in the adjusted case) boundary-probability submodels are
 estimated jointly by component-wise gradient boosting. Variable selection and
 regularization come out of the fitting procedure itself, which makes the approach usable
 when the number of candidate covariates exceeds the number of observations.
 
 It accompanies the MSc dissertation *Boosting-based Inference and Variable Selection for
 Modeling Bounded Continuous Data* (IME-USP). The power logit class is due to
-Queiroz and Ferrari (2024), and the inflated extension to Queiroz and Ferrari (2024b).
+Queiroz and Ferrari (2024), and the extension with a point mass at a boundary to
+Queiroz and Ferrari (2024b), who call it the inflated power logit. Here it is called
+the adjusted power logit, since 0 and 1 do not belong to the support of the PL
+distribution and are incorporated by adjusting it.
 
 ## Installation
 
@@ -45,8 +48,8 @@ coef(fit, parameter = "mu")
 For a response with a point mass at a boundary:
 
 ```r
-## four-parameter inflated power logit, mass at one
-fam <- IPL(family = "TF", zeta = 3, c = 1, stabilization = "MAD")
+## four-parameter adjusted power logit, mass at one
+fam <- APL(family = "TF", zeta = 3, c = 1, stabilization = "MAD")
 
 fit <- glmboostLSS(
   formula  = list(mu = y ~ ., sigma = y ~ ., lambda = y ~ 1, alpha = y ~ .),
@@ -64,19 +67,19 @@ Runnable templates are in [`inst/examples/`](inst/examples).
 |---|---|---|
 | `PowerLogit()` | mu, sigma, lambda | full three-parameter PL model |
 | `GJS()` | mu, sigma | the special case lambda = 1 (generalized Johnson S_B) |
-| `IPL()` | mu, sigma, lambda, alpha | inflated PL, mass at `c = 0` or `c = 1` |
+| `APL()` | mu, sigma, lambda, alpha | adjusted PL, mass at `c = 0` or `c = 1` |
 
 All three take `family`, one of `"NO"`, `"TF"`, `"LO"`, `"PE"`, `"Hyp"`, `"SN"`,
 `"SLASH"`, which selects the density generator function; `zeta`, the extra shape
 parameter used by TF, PE, Hyp, SN and SLASH; and `stabilization`, one of `"none"`,
 `"MAD"`, `"L2"`, for the gradient scaling.
 
-The distribution functions `dIPL()`, `pIPL()`, `qIPL()` and `rIPL()` are exported too.
+The distribution functions `dAPL()`, `pAPL()`, `qAPL()` and `rAPL()` are exported too.
 
 ## Notes on the implementation
 
 **Links.** The median uses a logit link, the dispersion and skewness a log link, and the
-inflation parameter a logit link.
+boundary probability a logit link.
 
 **lambda is not regressed on covariates.** It is a scalar shared by all observations, so
 it must enter the formula as `lambda = y ~ 1`. The families raise an error otherwise.
@@ -84,12 +87,8 @@ it must enter the formula as `lambda = y ~ 1`. The families raise an error other
 **Offsets.** The offset for the median is the logit of the sample median of the response.
 For the dispersion it is obtained by a univariate optimization of the empirical risk over
 `sigma` in `[0.1, 10]`, with the median fixed at the sample median and `lambda` at 1.
-For the skewness the offset is **fixed at `log(0.1)`**: `PLLambda()` calls `optimize()`
-over `lambda` in `[0.1, 2]` but then overwrites the result, so the starting value is
-always 0.1 regardless of the data. This is the behaviour that produced every result
-reported in the dissertation, and it is kept here unchanged for reproducibility. Be aware
-of it when interpreting the estimated skewness, which tends to drift upward from that
-starting point.
+For the skewness it is obtained the same way, over `lambda` in `[0.1, 2]`, with the
+median fixed at the sample median and the dispersion at a diffuse starting value.
 
 **Internal calls.** The families call `PLreg:::dPL` and
 `gamboostLSS:::stabilize_ngradient`, both internal to their packages. This is why PLboost
@@ -102,16 +101,17 @@ of the dissertation, and is not part of the installed package.
 
 | Directory | What it produces |
 |---|---|
-| `ch2_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario: `validation_multirep.R` writes `validation_results.csv`, and `make_tables.py` turns it into Tables 2.3 (PL) and 2.4 (IPL). Seeded, so a rerun gives the published numbers |
-| `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel: `simulation_PL.R` (run once per generator, set `fam`) and `simulation_IPL.R` store the results; the scripts in `figures/` draw every figure of Chapter 3 from them |
-| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, inflated PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce/ch4_application/DATA.md) |
+| `ch3_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario (Sections 3.1 and 3.2): `validation_multirep.R` writes `validation_results.csv` and `validation_replications.csv`, `make_tables.py` turns the first into Tables 3.1 (PL) and 3.2 (APL), and `appendixA_boxplots.R` draws Figures A.1 to A.5 from the second. Seeded, so a rerun gives the published numbers |
+| `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel: `simulation_PL.R` (run once per generator, set `fam`) and `simulation_APL.R` store the results; the scripts in `figures/` draw every figure of Chapter 3 from them |
+| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, adjusted PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce/ch4_application/DATA.md) |
 
 Scripts write their output to the directory given by the `PLBOOST_OUT` environment
 variable, defaulting to the working directory:
 
 ```bash
-PLBOOST_OUT=~/plboost-output Rscript reproduce/ch2_validation/validation_multirep.R
-PLBOOST_OUT=~/plboost-output python3 reproduce/ch2_validation/make_tables.py
+PLBOOST_OUT=~/plboost-output Rscript reproduce/ch3_validation/validation_multirep.R
+PLBOOST_OUT=~/plboost-output python3 reproduce/ch3_validation/make_tables.py
+PLBOOST_OUT=~/plboost-output Rscript reproduce/ch3_validation/appendixA_boxplots.R
 ```
 
 The Chapter 3 simulations are not seeded: a rerun gives statistically equivalent
@@ -120,6 +120,16 @@ from the stored `.RData` results.
 
 The credit data is not redistributed here; see
 [`reproduce/ch4_application/DATA.md`](reproduce/ch4_application/DATA.md).
+
+## Residual diagnostics (experimental)
+
+[`inst/diagnostics/`](inst/diagnostics) holds quantile residuals with simulated envelopes
+for PL and APL fits, by boosting and by maximum likelihood. It is not part of the
+dissertation and is not exported; `example_residuals.R` shows how to use it:
+
+```r
+source(system.file("diagnostics", "residuals_boosting.R", package = "PLboost"))
+```
 
 ## License
 

@@ -1,10 +1,10 @@
 # ==============================================================================
 # credit_run_cv.R
-# IPL boosted regression on LGD (Vermont) — 5-FOLD CROSS-VALIDATION
+# APL boosted regression on LGD (Vermont) — 5-FOLD CROSS-VALIDATION
 # Design: one random partition into 5 groups; each group is the test
 # set once; the CV result is the MEAN of the 5 fold metrics (RMSE, MAE, Upsilon).
 #
-#   Outer  : R_REPEATS x 5-fold partitions, STRATIFIED on the inflation indicator
+#   Outer  : R_REPEATS x 5-fold partitions, STRATIFIED on the boundary indicator
 #            (lgd == 1 vs lgd in (0,1)) so every fold keeps the ~60/40 mix.
 #            Folds disjoint & exhaustive. DEFAULT R_REPEATS = 1 (single pass,
 #            as specified for the dissertation). The repeat structure is left settable:
@@ -15,7 +15,7 @@
 #
 # n(VT) = 320  -> 5-fold gives ~64 test obs/fold and ~256 train obs/fold.
 #
-# Memory discipline (from the IPL runs): options(mc.cores = 8) + rm()/gc().
+# Memory discipline (from the APL runs): options(mc.cores = 8) + rm()/gc().
 # Batching by REPEAT range only matters if R_REPEATS > 1.
 # ==============================================================================
 
@@ -33,6 +33,7 @@ library(caret)
   }
   a  <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
+  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
   if (length(sp)) return(dirname(normalizePath(sp)))
   getwd()
 }
@@ -41,7 +42,7 @@ library(caret)
 app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path,"cross_val", "results")
 
-library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 load(file.path(app_path, "data", "df_lgd_all.RData"))
 
@@ -81,8 +82,8 @@ mstop_init <- 500
 m_stop_cv  <- 800
 nu         <- 0.001
 
-# ── IPL FAMILY LIST + ZETA GRIDS ──────────────────────────────────────────────
-ipl_families <- list(
+# ── APL FAMILY LIST + ZETA GRIDS ──────────────────────────────────────────────
+apl_families <- list(
   NO    = 2,
   TF    = c(3, 4, 5, 6, 8, 10, 15, 20),
   LO    = 2,
@@ -92,7 +93,7 @@ ipl_families <- list(
   Hyp   = seq(0.5, 5, by = 0.5)
 )
 
-grid_ipl <- make.grid(
+grid_apl <- make.grid(
   max           = c(mu = m_stop_cv, sigma = m_stop_cv,
                     lambda = m_stop_cv, alpha = m_stop_cv),
   min           = mstop_init,
@@ -108,7 +109,7 @@ grid_beoi <- make.grid(
 )
 
 # ── UPSILON FUNCTIONS (continuous part only: lgd > 0 & lgd < 1) ───────────────
-compute_upsilon_ipl <- function(y, mu, sigma, lambda, zeta, family) {
+compute_upsilon_apl <- function(y, mu, sigma, lambda, zeta, family) {
   cont  <- y > 0 & y < 1
   y_c   <- y[cont]
   n     <- length(y_c)
@@ -159,7 +160,7 @@ BATCH_TAG    <- "1"         # batch 1: "1" | batch 2: "2"
 # REPEAT_END   <- 10          # batch 1: 5   | batch 4: 10
 # BATCH_TAG    <- "4"         # batch 1: "1" | batch 4: "4"
 
-# IPL fits 4 parameters (mu, sigma, lambda, alpha) and credit-VT is the larger
+# APL fits 4 parameters (mu, sigma, lambda, alpha) and credit-VT is the larger
 # data (n = 320 vs itagrade's 171), so each cvrisk() worker is much heavier than
 # in the PL run. 8 parallel mclapply forks OOM'd a 16 GB machine here. 4 halves
 # the peak with NO effect on results (identical folds/seeds — only fewer workers
@@ -181,11 +182,11 @@ cat("#   THIS BATCH  : repeats", REPEAT_START, "-", REPEAT_END,
     REPEAT_END * K_FOLDS, "(", BATCH_ENTRIES, "fits ), tag =", BATCH_TAG, "\n")
 cat("################################################################\n")
 
-# Stratify folds on the inflation indicator so each fold keeps the ~60/40
-# continuous/inflated mix (lgd == 1 is the inflated point mass).
+# Stratify folds on the boundary indicator so each fold keeps the ~60/40
+# continuous/boundary mix (lgd == 1 is the point mass).
 strat_factor <- factor(ifelse(df_lgd$lgd >= 1, "infl", "cont"))
 cat("Stratification — continuous:", sum(strat_factor == "cont"),
-    " inflated(lgd=1):", sum(strat_factor == "infl"), "\n")
+    " boundary(lgd=1):", sum(strat_factor == "infl"), "\n")
 
 fold_seeds <-  1206 + seq_len(R_REPEATS)        # credit base seed 123; repeat r -> 123 + r
 
@@ -231,10 +232,10 @@ for (r in REPEAT_START:REPEAT_END) {
         "| n_train", nrow(df_train),
         "n_test", nrow(df_test), "==========\n")
 
-    # ── IPL FAMILIES ───────────────────────────────────────────────────────────
-    for (fam_name in names(ipl_families)) {
+    # ── APL FAMILIES ───────────────────────────────────────────────────────────
+    for (fam_name in names(apl_families)) {
 
-      zeta_grid            <- ipl_families[[fam_name]]
+      zeta_grid            <- apl_families[[fam_name]]
       zeta_results         <- vector("list", length(zeta_grid))
       upsilon_zeta_profile <- numeric(length(zeta_grid))
 
@@ -244,7 +245,7 @@ for (r in REPEAT_START:REPEAT_END) {
 
         tryCatch({
 
-          fam_z <- IPL(family = fam_name, stabilization = "MAD", c = 1, zeta = zeta_z)
+          fam_z <- APL(family = fam_name, stabilization = "MAD", c = 1, zeta = zeta_z)
 
           model_z <- glmboostLSS(
             formula = list(mu     = lgd ~ .,
@@ -263,12 +264,12 @@ for (r in REPEAT_START:REPEAT_END) {
           # cv() runs in the main process before mclapply forks, so this alone
           # pins it (no need for L'Ecuyer). One seed per fold slot.
           set.seed(50000L + sid)
-          cvr_z <- cvrisk(model_z, grid = grid_ipl,
+          cvr_z <- cvrisk(model_z, grid = grid_apl,
                           folds = mboost::cv(model.weights(model_z)),
                           papply = mclapply)
           opt_z <- mstop(cvr_z)
 
-          fam_z <- IPL(family = fam_name, stabilization = "MAD", c = 1, zeta = zeta_z)
+          fam_z <- APL(family = fam_name, stabilization = "MAD", c = 1, zeta = zeta_z)
 
           model_z <- glmboostLSS(
             formula = list(mu     = lgd ~ .,
@@ -288,7 +289,7 @@ for (r in REPEAT_START:REPEAT_END) {
           sigma_train_z  <- as.numeric(predict(model_z$sigma,  newdata = df_train, type = "response"))
           lambda_train_z <- as.numeric(predict(model_z$lambda, newdata = df_train, type = "response"))[1]
 
-          upsilon_z <- compute_upsilon_ipl(
+          upsilon_z <- compute_upsilon_apl(
             y      = df_train$lgd,
             mu     = mu_train_z,
             sigma  = sigma_train_z,
@@ -361,8 +362,8 @@ for (r in REPEAT_START:REPEAT_END) {
         zeta_best            = best$zeta,
         upsilon              = best$upsilon,
         upsilon_zeta_profile = setNames(upsilon_zeta_profile, zeta_grid),
-        error_ipl            = best$mse,
-        mae_ipl              = best$mae,
+        error_apl            = best$mse,
+        mae_apl              = best$mae,
         mstop_mu             = best$mstop_mu,
         mstop_sigma          = best$mstop_sigma,
         mstop_lambda         = best$mstop_lambda,
@@ -479,7 +480,7 @@ for (r in REPEAT_START:REPEAT_END) {
 # ==============================================================================
 summarise_cv(
   results_containers = results_containers,
-  family_order = c(names(ipl_families), "BEOI"),
+  family_order = c(names(apl_families), "BEOI"),
   meta = list(app = "credit VT", k_folds = K_FOLDS, r_repeats = R_REPEATS,
               repeat_start = REPEAT_START, repeat_end = REPEAT_END,
               batch_entries = BATCH_ENTRIES, total_entries = TOTAL_ENTRIES,
@@ -489,7 +490,7 @@ summarise_cv(
 )
 
 # ── SAVE — one .RData per family, suffixed by batch tag ───────────────────────
-for (fam_name in names(ipl_families)) {
+for (fam_name in names(apl_families)) {
   sim_results <- results_containers[[fam_name]]
   save(sim_results, var_dict,
        file = file.path(results_path,

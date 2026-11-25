@@ -2,7 +2,7 @@
 # with fewer entries (top_n = 8) so all six families fit on one condensed page.
 # Overwrites imgs/<fam>/lollipop_mu.png and lollipop_sigma.png only.
 
-save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and IPL_simulations/ with the .RData
+save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and APL_simulations/ with the .RData
 families  <- c("NO", "TF", "LO", "PE", "Hyp", "SLASH")
 M <- 100
 TOPN <- 8
@@ -35,7 +35,7 @@ lollipop_sel <- function(freq_mat, top_n = TOPN, param_label = "mu", sd_mult = 1
   segments(x0 = x_lo, x1 = x_hi, y0 = seq_len(n_plot), y1 = seq_len(n_plot), col = "#4682B4", lwd = 1.4)
   segments(x0 = x_lo, x1 = x_lo, y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap, col = "#4682B4", lwd = 1.4)
   segments(x0 = x_hi, x1 = x_hi, y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap, col = "#4682B4", lwd = 1.4)
-  axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 0.9)
+  axis(2, at = seq_len(n_plot), labels = parse(text = sub("^V([0-9]+)$", "x[\\1]", sub("^others$", "'others'", lbl_plot))), las = 1, cex.axis = 0.9)
   abline(v = 0, col = "gray60", lty = 2); par(old_par)
 }
 

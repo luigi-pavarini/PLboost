@@ -1,8 +1,8 @@
 library(PLboost)
-# Template: boosted Inflated Power-Logit (IPL) regression
+# Template: boosted Adjusted Power Logit (APL) regression
 #
 # Run from the repository root, e.g.
-#   Rscript examples/iplboost_template.R
+#   Rscript examples/aplboost_template.R
 
 rm(list = ls())
 
@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
 # --- data ---
 
 # df <- ... (a data.frame with response + covariates)
-# IPL is for y in [0,1], with mass at c = 0 or c = 1.
+# APL is for y in [0,1], with mass at c = 0 or c = 1.
 # y <- ...  # must be your response variable (e.g. "lgd")
 
 # --- settings ---
@@ -27,7 +27,7 @@ fam  <- "NO"  # "NO","LO","TF","PE","Hyp","SN","SLASH" # must be a valid family 
 zeta <- 2 # must be > 0
 c_infl <- 1 # 0 for mass at 0, 1 for mass at 1
 
-ipl_family <- IPL(
+apl_family <- APL(
   family = fam,
   zeta = zeta,
   c = c_infl,
@@ -62,7 +62,7 @@ fit <- glmboostLSS(
     alpha  = alpha_formula
   ),
   data     = df,
-  families = ipl_family,
+  families = apl_family,
   control  = boost_control(
     mstop = c(mu = 500, sigma = 500, lambda = 50, alpha = 500), # must be a vector of length 4
     nu = 0.01, # must be between 0 and 1

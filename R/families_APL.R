@@ -1,15 +1,15 @@
 # ─────────────────────────────────────────────────────────────
-# Inflated Power-Logit (IPL) Families for gamboostLSS/mboost
+# Adjusted Power Logit (APL) Families for gamboostLSS/mboost
 # ─────────────────────────────────────────────────────────────
 # 
 # Author: Luigi Pavarini de Lima (MSc Probability & Statistics, IME-USP)
-# Framework: Inflated Power-Logit regression (Queiroz & Ferrari, 2024a)
+# Framework: Adjusted Power Logit regression (Queiroz & Ferrari, 2024a)
 # 
-# Implementation of IPL distribution family for bounded data in [0,1] 
+# Implementation of APL distribution family for bounded data in [0,1] 
 # with potential probability mass at boundaries (0 or 1).
 #
 # Available family:
-# - IPL(): Full 4-parameter model (mu, sigma, lambda, alpha) 
+# - APL(): Full 4-parameter model (mu, sigma, lambda, alpha) 
 # 
 # ─────────────────────────────────────────────────────────────
 
@@ -24,9 +24,9 @@
 # ─────────────────────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────
-# IPL Family for mu (location parameter)
+# APL Family for mu (location parameter)
 # ─────────────────────────────────────────────────────────────
-IPLMu <- function(sigma = NULL,
+APLMu <- function(sigma = NULL,
                   lambda = NULL, 
                   alpha = NULL,
                   family = c("NO","LO","TF","PE","Hyp","SN","SLASH"),
@@ -40,7 +40,7 @@ IPLMu <- function(sigma = NULL,
   # Loss for mu
   loss <- function(y, f, sigma, lambda, alpha) {
     mu <- plogis(f)
-    -dIPL(y,
+    -dAPL(y,
           alpha = alpha,
           mu = mu,
           sigma = sigma,
@@ -96,14 +96,14 @@ IPLMu <- function(sigma = NULL,
     loss     = loss,
     response = response,
     offset   = offset,
-    name     = sprintf("IPL: mu (family=%s, c=%d, logit link)", family, c)
+    name     = sprintf("APL: mu (family=%s, c=%d, logit link)", family, c)
   )
 }
 
 # ─────────────────────────────────────────────────────────────
-# IPL Family for sigma (dispersion parameter)
+# APL Family for sigma (dispersion parameter)
 # ─────────────────────────────────────────────────────────────
-IPLSigma <- function(mu = NULL,
+APLSigma <- function(mu = NULL,
                      lambda = NULL,
                      alpha = NULL,
                      family = c("NO","LO","TF","PE","Hyp","SN","SLASH"),
@@ -118,7 +118,7 @@ IPLSigma <- function(mu = NULL,
   loss <- function(y, f, mu, lambda, alpha) {
     sigma <- exp(f)
     
-    -dIPL(y,
+    -dAPL(y,
           alpha = alpha,
           mu = mu,
           sigma = sigma,
@@ -183,14 +183,14 @@ IPLSigma <- function(mu = NULL,
     loss     = loss,
     response = response,
     offset   = offset,
-    name     = sprintf("IPL: sigma (family=%s, c=%d, log link)", family, c)
+    name     = sprintf("APL: sigma (family=%s, c=%d, log link)", family, c)
   )
 }
 
 # ─────────────────────────────────────────────────────────────
-# IPL Family for lambda (shape parameter)
+# APL Family for lambda (shape parameter)
 # ─────────────────────────────────────────────────────────────
-IPLLambda <- function(mu = NULL,
+APLLambda <- function(mu = NULL,
                       sigma = NULL,
                       alpha = NULL,
                       family = c("NO","LO","TF","PE","Hyp","SN","SLASH"),
@@ -205,7 +205,7 @@ IPLLambda <- function(mu = NULL,
   loss <- function(y, f, mu, sigma, alpha) {
     lam <- exp(f)
     
-    -dIPL(y,
+    -dAPL(y,
           alpha = alpha,
           mu = mu,
           sigma = sigma,
@@ -274,14 +274,14 @@ IPLLambda <- function(mu = NULL,
     loss     = loss,
     response = response,
     offset   = offset,
-    name     = sprintf("IPL: lambda (family=%s, c=%d, log link)", family, c)
+    name     = sprintf("APL: lambda (family=%s, c=%d, log link)", family, c)
   )
 }
 
 # ─────────────────────────────────────────────────────────────
-# IPL Family for alpha (inflation parameter)
+# APL Family for alpha (boundary probability)
 # ─────────────────────────────────────────────────────────────
-IPLAlpha <- function(mu = NULL,
+APLAlpha <- function(mu = NULL,
                      sigma = NULL,
                      lambda = NULL,
                      family = c("NO","LO","TF","PE","Hyp","SN","SLASH"),
@@ -300,7 +300,7 @@ IPLAlpha <- function(mu = NULL,
   loss <- function(y, f, mu, sigma, lambda) {
     alpha <- plogis(f)
     
-    -dIPL(y,
+    -dAPL(y,
           alpha = alpha,
           mu = mu,
           sigma = sigma,
@@ -361,19 +361,19 @@ IPLAlpha <- function(mu = NULL,
     loss     = loss,
     response = response,
     offset   = offset,
-    name     = sprintf("IPL: alpha (family=%s, c=%d, logit link)", family, c)
+    name     = sprintf("APL: alpha (family=%s, c=%d, logit link)", family, c)
   )
 }
 
 # ─────────────────────────────────────────────────────────────
-# IPL Family Constructor (Full 4-parameter model)
+# APL Family Constructor (Full 4-parameter model)
 # ─────────────────────────────────────────────────────────────
-# 4-parameter (mu, sigma, lambda, alpha) Inflated Power-Logit
+# 4-parameter (mu, sigma, lambda, alpha) Adjusted Power Logit
 # Example:
-#   fam <- IPL(family = "NO", c = 0)  # Normal errors, mass at 0
+#   fam <- APL(family = "NO", c = 0)  # Normal errors, mass at 0
 #   fit <- glmboostLSS(y ~ X | X | X | X, families = fam, data = df)
 # ─────────────────────────────────────────────────────────────
-IPL <- function(stabilization = c("none","MAD","L2"),
+APL <- function(stabilization = c("none","MAD","L2"),
                 family = c("NO","LO","TF","PE","Hyp","SN","SLASH"),
                 c = 0,  # which boundary gets mass: 0 or 1
                 zeta = 2) {
@@ -386,23 +386,23 @@ IPL <- function(stabilization = c("none","MAD","L2"),
   }
   
   Families(
-    mu = IPLMu( sigma = NULL, lambda = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
-    sigma = IPLSigma( mu = NULL, lambda = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
-    lambda = IPLLambda( mu = NULL, sigma = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
-    alpha = IPLAlpha( mu = NULL, sigma = NULL, lambda = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization)
+    mu = APLMu( sigma = NULL, lambda = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
+    sigma = APLSigma( mu = NULL, lambda = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
+    lambda = APLLambda( mu = NULL, sigma = NULL, alpha = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization),
+    alpha = APLAlpha( mu = NULL, sigma = NULL, lambda = NULL, family = family, c = c, zeta = zeta, stabilization = stabilization)
   )
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# USAGE GUIDE: Inflated Power-Logit (IPL) Models
+# USAGE GUIDE: Adjusted Power Logit (APL) Models
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # Available Model:
-# - IPL():  Full 4-parameter model (mu, sigma, lambda, alpha) 
+# - APL():  Full 4-parameter model (mu, sigma, lambda, alpha) 
 #
 # Parameter c controls which boundary gets probability mass:
-# - c = 0: Mass at 0 (zero-inflation)
-# - c = 1: Mass at 1 (one-inflation) 
+# - c = 0: Mass at 0 (point mass at zero)
+# - c = 1: Mass at 1 (point mass at one) 
 #
 # Available error distributions:
 # "NO" = Normal, "LO" = Logistic, "TF" = Student-t, "PE" = Power Exponential,
@@ -413,21 +413,21 @@ IPL <- function(stabilization = c("none","MAD","L2"),
 # BASIC EXAMPLES
 # ──────────────────────────────────────────────────────────────────────────────
 
-# # Zero-inflated data (has exact 0s)
-# fam_ipl_0 <- IPL(family = "NO", c = 0)  # 4-parameter, mass at 0
-# fit_ipl_0 <- glmboostLSS(
+# # Data with exact 0s
+# fam_apl_0 <- APL(family = "NO", c = 0)  # 4-parameter, mass at 0
+# fit_apl_0 <- glmboostLSS(
 #   formula = list(mu = y ~ ., sigma = y ~ ., lambda = y ~ ., alpha = y ~ .),
 #   data = data,
-#   families = fam_ipl_0,
+#   families = fam_apl_0,
 #   control = boost_control(mstop = 150, nu = 0.01)
 # )
 # 
-# # One-inflated data (has exact 1s) 
-# fam_ipl_1 <- IPL(family = "TF", c = 1, zeta = 3)  # 4-parameter, mass at 1, robust
-# fit_ipl_1 <- glmboostLSS(
+# # Data with exact 1s 
+# fam_apl_1 <- APL(family = "TF", c = 1, zeta = 3)  # 4-parameter, mass at 1, robust
+# fit_apl_1 <- glmboostLSS(
 #   formula = list(mu = y ~ ., sigma = y ~ ., lambda = y ~ ., alpha = y ~ .),
 #   data = data,
-#   families = fam_ipl_1,
+#   families = fam_apl_1,
 #   control = boost_control(mstop = 150, nu = 0.01)
 # )
 

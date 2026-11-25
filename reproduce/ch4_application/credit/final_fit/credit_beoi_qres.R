@@ -1,7 +1,7 @@
 # ==============================================================================
 # credit_beoi_qres.R
 # The same quantile-residual panels for the one-inflated beta baseline (BEOI),
-# fitted by boosting on the full sample, for comparison with the IPL-TF panels.
+# fitted by boosting on the full sample, for comparison with the APL-TF panels.
 #
 # gamlss.dist::BEOI parameterization (from dBEOI):
 #   log.lik = ifelse(x == 1, log(nu), log(1-nu) + dbeta(x, mu*sigma, (1-mu)*sigma))
@@ -11,7 +11,7 @@
 #   (b) continuous : Phi^{-1}[pbeta(y; mu*sigma, (1-mu)*sigma)] on y < 1
 #   (c) joint      : Phi^{-1}[pBEOI(y)] on y < 1, u ~ U(1-nu, 1) at the mass
 #
-# Same recipe as the IPL: mstop by cvrisk() on the full sample, Atkinson
+# Same recipe as the APL: mstop by cvrisk() on the full sample, Atkinson
 # envelope by refitting. B defaults to 200; override with B_ENV.
 # Supplementary diagnostic: not part of the text of dissertation v1.0.
 # ==============================================================================
@@ -32,7 +32,7 @@ setnames(df_lgd, old = pred_cols, new = paste0("V", seq_along(pred_cols)))
 y <- df_lgd$lgd; n <- length(y)
 cat("n =", n, " p =", length(pred_cols), " | massa em 1:", sum(y == 1), "\n")
 
-# Hiperparametros IDENTICOS aos do BEOI em credit_run.r, que e' a mesma origem de onde sairam os do IPL-TF
+# Hiperparametros IDENTICOS aos do BEOI em credit_run.r, que e' a mesma origem de onde sairam os do APL-TF
 # usados em credit_final_fit.R. Nada aqui foi ajustado para este script.
 LR <- 0.001                      # learning rate do boosting (nao confundir com o nu do BEOI)
 mstop_init <- 500; m_stop_cv <- 800

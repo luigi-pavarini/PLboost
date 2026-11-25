@@ -3,10 +3,10 @@
 # Final PL-NO fit on the full sample (Medicina, Sao Paulo) and quantile-residual
 # diagnostics, mirroring credit_final_fit.R.
 #
-# There is no inflation here: the response tx = Conceito Enade / 5 is strictly
+# There is no point mass here: the response tx = Conceito Enade / 5 is strictly
 # interior, so the residual is the plain quantile residual, no randomization:
 #     r_i^q = Phi^{-1}[ F(y_i; mu_i, sigma_i, lambda) ]
-# and a single panel instead of the three of the inflated case.
+# and a single panel instead of the three of the adjusted case.
 #
 # Envelope by refitting (Atkinson): minimum and maximum over B replicates
 # simulated from the fitted model. B defaults to 200; override with B_ENV.
@@ -21,7 +21,7 @@ library(gamlss.dist); library(EnvStats); library(parallel)
 app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain data/
 out_path <- file.path(app_path, "final_fit")
 dir.create(out_path, showWarnings = FALSE)
-library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 
 load(file.path(app_path, "data", "df_medicina_SP.RData"))
 pred_cols <- setdiff(names(df_inep), "tx")

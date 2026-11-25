@@ -1,6 +1,6 @@
 # ==============================================================================
 # credit_final_fit.R
-# Final IPL-TF fit on the full Vermont sample (n = 320) and quantile-residual
+# Final APL-TF fit on the full Vermont sample (n = 320) and quantile-residual
 # diagnostics.
 #
 # Cross-validation fits 50 models and answers out-of-sample performance; model
@@ -25,7 +25,7 @@ app_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must contain data/
 out_path <- file.path(app_path, "final_fit")
 dir.create(out_path, showWarnings = FALSE)
 
-library(PLboost); library(PLreg); library(gamboostLSS)   # PL / IPL families and distributions
+library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 
 # ---- dados, identico ao credit_run.r --------------------------------
 load(file.path(app_path, "data", "df_lgd_all.RData"))
@@ -43,11 +43,11 @@ FAM <- "TF"; C_INFL <- 1
 mstop_init <- 500; m_stop_cv <- 800; nu <- 0.001
 zeta_grid <- c(3, 4, 5, 6, 8, 10, 15, 20)
 
-grid_ipl <- make.grid(max = c(mu = m_stop_cv, sigma = m_stop_cv,
+grid_apl <- make.grid(max = c(mu = m_stop_cv, sigma = m_stop_cv,
                               lambda = m_stop_cv, alpha = m_stop_cv),
                       min = mstop_init, length.out = 2, dense_mu_grid = TRUE)
 
-upsilon_ipl <- function(y, mu, sigma, lambda, zeta, family) {
+upsilon_apl <- function(y, mu, sigma, lambda, zeta, family) {
   cont <- y > 0 & y < 1
   fda  <- sort(pPL(y[cont], mu = mu[cont], sigma = sigma[cont],
                    lambda = lambda, zeta = zeta, family = family))
@@ -58,8 +58,8 @@ upsilon_ipl <- function(y, mu, sigma, lambda, zeta, family) {
 # ATENCAO: `fam` precisa viver no ambiente global. O cvrisk() reavalia
 # `families = fam` a partir da call guardada, noutro ambiente, e nao enxerga
 # variavel local -- da "object 'fam' not found". O script de CV faz igual.
-fit_ipl <- function(dat, zeta, mstop_vec, trace = FALSE) {
-  assign("fam", IPL(family = FAM, stabilization = "MAD", c = C_INFL, zeta = zeta),
+fit_apl <- function(dat, zeta, mstop_vec, trace = FALSE) {
+  assign("fam", APL(family = FAM, stabilization = "MAD", c = C_INFL, zeta = zeta),
          envir = globalenv())
   glmboostLSS(formula = list(mu = lgd ~ ., sigma = lgd ~ .,
                              lambda = lgd ~ 1, alpha = lgd ~ .),
@@ -71,9 +71,9 @@ fit_ipl <- function(dat, zeta, mstop_vec, trace = FALSE) {
 cat("\n[1] escolhendo zeta na base completa\n")
 ups <- rep(NA_real_, length(zeta_grid))
 for (z in seq_along(zeta_grid)) {
-  m <- try(fit_ipl(df_lgd, zeta_grid[z], rep(mstop_init, 4)), silent = TRUE)
+  m <- try(fit_apl(df_lgd, zeta_grid[z], rep(mstop_init, 4)), silent = TRUE)
   if (inherits(m, "try-error")) next
-  ups[z] <- upsilon_ipl(df_lgd$lgd,
+  ups[z] <- upsilon_apl(df_lgd$lgd,
     as.numeric(predict(m$mu,     newdata = df_lgd, type = "response")),
     as.numeric(predict(m$sigma,  newdata = df_lgd, type = "response")),
     as.numeric(predict(m$lambda, newdata = df_lgd, type = "response"))[1],
@@ -86,16 +86,16 @@ cat("   -> zeta escolhido:", zeta_best, "\n")
 
 # ---- 2. mstop por CV na base completa ----------------------------------------
 cat("\n[2] escolhendo mstop por cvrisk\n")
-m0 <- fit_ipl(df_lgd, zeta_best, rep(mstop_init, 4))
+m0 <- fit_apl(df_lgd, zeta_best, rep(mstop_init, 4))
 set.seed(20260812L)
-cvr  <- cvrisk(m0, grid = grid_ipl, folds = mboost::cv(model.weights(m0)),
+cvr  <- cvrisk(m0, grid = grid_apl, folds = mboost::cv(model.weights(m0)),
                papply = mclapply)
 opt  <- mstop(cvr)
 print(opt)
 
 # ---- 3. ajuste final ---------------------------------------------------------
 cat("\n[3] ajuste final\n")
-fit <- fit_ipl(df_lgd, zeta_best,
+fit <- fit_apl(df_lgd, zeta_best,
                c(opt["mu"], opt["sigma"], opt["lambda"], opt["alpha"]))
 
 mu_h  <- as.numeric(predict(fit$mu,     newdata = df_lgd, type = "response"))
@@ -108,7 +108,7 @@ y <- df_lgd$lgd
 set.seed(20260812L)
 rq <- numeric(length(y))
 at_c <- (y == C_INFL)
-rq[!at_c] <- qnorm(pIPL(y[!at_c], alpha = al_h[!at_c], mu = mu_h[!at_c],
+rq[!at_c] <- qnorm(pAPL(y[!at_c], alpha = al_h[!at_c], mu = mu_h[!at_c],
                         sigma = sg_h[!at_c], lambda = lb_h, zeta = zeta_best,
                         family = FAM, c = C_INFL))
 rq[at_c]  <- qnorm(runif(sum(at_c), 1 - al_h[at_c], 1))   # c = 1
@@ -148,13 +148,13 @@ coef_tab <- function(sub, nome) {
 tab <- rbindlist(list(coef_tab("mu","eta_mu"), coef_tab("sigma","eta_sigma"),
                       coef_tab("alpha","eta_alpha")), use.names = TRUE)
 
-md <- c("# Ajuste final IPL-TF, base completa (n = 320)", "",
+md <- c("# Ajuste final APL-TF, base completa (n = 320)", "",
         sprintf("- zeta = %s, escolhido por Upsilon na base completa", zeta_best),
         sprintf("- mstop = mu %s, sigma %s, lambda %s, alpha %s",
                 opt["mu"], opt["sigma"], opt["lambda"], opt["alpha"]),
         sprintf("- lambda_hat = %.4f", lb_h),
         sprintf("- Upsilon (base completa) = %.4f",
-                upsilon_ipl(y, mu_h, sg_h, lb_h, zeta_best, FAM)),
+                upsilon_apl(y, mu_h, sg_h, lb_h, zeta_best, FAM)),
         sprintf("- r^q: media %.3f, sd %.3f, |r| > 3 em %d de %d",
                 mean(rq), sd(rq), sum(abs(rq) > 3), length(rq)), "",
         "| Submodel | Variable | Estimate |", "|---|---|---|",

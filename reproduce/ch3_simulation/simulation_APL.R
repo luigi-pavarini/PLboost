@@ -1,4 +1,4 @@
-# Boosted IPL regression - Adapted with X_alpha uniform control approach
+# Boosted APL regression - Adapted with X_alpha uniform control approach
 
 rm(list = ls())
 
@@ -7,8 +7,8 @@ rm(list = ls())
 # ==============================================================================
 # ---- setup -------------------------------------------------------------------
 library(PLboost)
-save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # results go to $PLBOOST_OUT/IPL_simulations/
-dir.create(file.path(save_path, "IPL_simulations"), showWarnings = FALSE, recursive = TRUE)
+save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # results go to $PLBOOST_OUT/APL_simulations/
+dir.create(file.path(save_path, "APL_simulations"), showWarnings = FALSE, recursive = TRUE)
 
 require("PLreg")
 require("gamboostLSS")
@@ -35,7 +35,7 @@ m_stop_cv  = 800
 #m_stop_cv  = 1200
 nu         = 0.01
 
-# Grid for cross-validation (adapted for IPL with 4 parameters)
+# Grid for cross-validation (adapted for APL with 4 parameters)
 grid <- make.grid(max = c(mu = m_stop_cv, sigma = m_stop_cv, lambda = m_stop_cv, alpha = m_stop_cv),
                   min = mstop_init,
                   length.out = 2, dense_mu_grid = TRUE)
@@ -98,7 +98,7 @@ alpha  <- plogis(eta_alpha)
 
 # ==============================================================================
 # STORAGE MATRICES
-# Column order in data_ipl: y, V1...V1000
+# Column order in data_apl: y, V1...V1000
 # => coef() vector order: (Intercept)[1], V1[2]...V999[1000], V1000[1001]
 # ==============================================================================
 
@@ -131,15 +131,15 @@ while(i <= M){
   tryCatch({
     k = k + 1  
     
-    y <- rIPL(n = n, mu = mu, sigma = sigma, alpha = alpha,
+    y <- rAPL(n = n, mu = mu, sigma = sigma, alpha = alpha,
               lambda = lambda, family = fam, zeta = 2, c = 0)
     
     # Combine covariates: V1...V1000 (alpha uses V999 and V1000)
     # Column order: y | V1...V1000
-    data_ipl <- data.frame(y, X)
+    data_apl <- data.frame(y, X)
     
-    # IPL family
-    family_ipl <- IPL(family = fam, stabilization = "MAD", c = 0, zeta = 2)
+    # APL family
+    family_apl <- APL(family = fam, stabilization = "MAD", c = 0, zeta = 2)
     
     # Initial model for cross-validation
     model <- glmboostLSS(
@@ -149,8 +149,8 @@ while(i <= M){
         lambda = y ~ 1,  # intercept only
         alpha  = y ~ .   # V1-V1000
       ),
-      data     = data_ipl,
-      families = family_ipl,
+      data     = data_apl,
+      families = family_apl,
       control  = boost_control(mstop = c(mstop_init, mstop_init, mstop_init, mstop_init),
                                nu = nu, trace = TRUE)
     )
@@ -172,8 +172,8 @@ while(i <= M){
         lambda = y ~ 1,
         alpha  = y ~ .
       ),
-      data     = data_ipl,
-      families = family_ipl,
+      data     = data_apl,
+      families = family_apl,
       control  = boost_control(mstop = c(m_stop[1, i], m_stop[2, i],
                                          m_stop[3, i], m_stop[4, i]),
                                nu = nu, trace = FALSE)
@@ -252,8 +252,7 @@ sim <- list(
   true_lambda     = lambda
 )
 
-sim_name <- paste0(example, "_sim_IPL_M", M, "_mstop", mstop_init, "_", fam, ".RData")
-# Save into the IPL_simulations/ subfolder, where summary_table_IPL.r and
-# experimentations_plots_IPL.R read from.
-save(sim, file = file.path(save_path, "IPL_simulations", sim_name))
-cat("\nSaved:", file.path(save_path, "IPL_simulations", sim_name), "\n")
+sim_name <- paste0(example, "_sim_APL_M", M, "_mstop", mstop_init, "_", fam, ".RData")
+# Save into the APL_simulations/ subfolder, where figures/plot_APL.R reads from.
+save(sim, file = file.path(save_path, "APL_simulations", sim_name))
+cat("\nSaved:", file.path(save_path, "APL_simulations", sim_name), "\n")

@@ -20,6 +20,7 @@ src/*.so
 # Results and data: code is versioned, outputs are not
 *.rds
 *.rda
+*.RData
 *.csv
 *.parquet
 *.zip

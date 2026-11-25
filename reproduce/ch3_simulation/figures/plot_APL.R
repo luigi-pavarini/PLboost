@@ -1,4 +1,4 @@
-# Regenerate the IPL simulation figures from the CURRENT (medium) scenario.
+# Regenerate the APL simulation figures from the CURRENT (medium) scenario.
 # Two fixes vs the figures previously used in the dissertation:
 #   (1) they came from the superseded `low` scenario (median exp(lambda) = 1.47)
 #       while the text/Appendix A.2 report the `medium` scenario (2.4242);
@@ -7,13 +7,13 @@
 #       replications in which the covariate was selected.
 # No refitting: this only replots the stored RData.
 
-save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and IPL_simulations/ with the .RData
+save_path <- Sys.getenv("PLBOOST_OUT", unset = ".")   # must hold PL_simulations/ and APL_simulations/ with the .RData
 fam <- "NO"; M <- 100
 beta_alpha <- c(0.70, -0.50)
 
-load(file.path(save_path, "IPL_simulations", "medium_sim_IPL_M100_mstop500_NO.RData"))  # -> sim
+load(file.path(save_path, "APL_simulations", "medium_sim_APL_M100_mstop500_NO.RData"))  # -> sim
 
-img_dir <- file.path(save_path, "IPL_simulations", "imgs", fam)
+img_dir <- file.path(save_path, "APL_simulations", "imgs", fam)
 if (!dir.exists(img_dir)) dir.create(img_dir, recursive = TRUE)
 save_png <- function(name, expr, w = 2000, h = 2000) {
   png(file.path(img_dir, paste0(name, ".png")), width = w, height = h, res = 330)
@@ -25,8 +25,8 @@ save_png("mu_coefs", {
           c(sim$est_mu[c(6:1001),]), ylim = c(-1.3, 0.6), xaxt = "n", las = 1,
           ylab = expression("Coefficients for" ~ eta[mu]), main = "")
   abline(h = 0, lty = 2, col = "gray")
-  axis(1, 1, expression(X[1])); axis(1, 2, expression(X[2]))
-  axis(1, 3, expression(X[3])); axis(1, 4, expression(X[4])); axis(1, 5, "non-inf.")
+  axis(1, 1, expression(x[1])); axis(1, 2, expression(x[2]))
+  axis(1, 3, expression(x[3])); axis(1, 4, expression(x[4])); axis(1, 5, "non-inf.")
   segments(0.5, -0.99, 1.5, -0.99, lty = 2, col = "red4")
   segments(1.5,  0.49, 2.5,  0.49, lty = 2, col = "red4")
   segments(2.5, -1.17, 3.5, -1.17, lty = 2, col = "red4")
@@ -39,8 +39,8 @@ save_png("sigma_coefs", {
           c(sim$est_sigma[c(2:3, 7:1001),]), ylim = c(-0.6, 1), xaxt = "n", las = 1,
           ylab = expression("Coefficients for" ~ eta[sigma]), main = "")
   abline(h = 0, lty = 2, col = "gray")
-  axis(1, 1, expression(X[3])); axis(1, 2, expression(X[4]))
-  axis(1, 3, expression(X[5])); axis(1, 4, "non-inf.")
+  axis(1, 1, expression(x[3])); axis(1, 2, expression(x[4]))
+  axis(1, 3, expression(x[5])); axis(1, 4, "non-inf.")
   segments(0.5, -0.41, 1.5, -0.41, lty = 2, col = "red4")
   segments(1.5, -0.24, 2.5, -0.24, lty = 2, col = "red4")
   segments(2.5,  0.81, 3.5,  0.81, lty = 2, col = "red4")
@@ -60,7 +60,7 @@ save_png("alpha_coefs", {
           ylim = c(-1, 2), xaxt = "n", las = 1,
           ylab = expression("Coefficients for" ~ eta[alpha]), main = "")
   abline(h = 0, lty = 2, col = "gray")
-  axis(1, 1, expression(X[999])); axis(1, 2, expression(X[1000])); axis(1, 3, "non-inf.")
+  axis(1, 1, expression(x[999])); axis(1, 2, expression(x[1000])); axis(1, 3, "non-inf.")
   segments(0.5, beta_alpha[1], 1.5, beta_alpha[1], lty = 2, col = "red4")
   segments(1.5, beta_alpha[2], 2.5, beta_alpha[2], lty = 2, col = "red4")
   segments(2.5, 0,             3.5, 0,             lty = 2, col = "red4")
@@ -87,7 +87,7 @@ lollipop_sel <- function(freq_mat, top_n = 8, param_label = "mu") {
   segments(xlo, seq_len(n_plot), xhi, seq_len(n_plot), col = "#4682B4", lwd = 1.4)
   segments(xlo, seq_len(n_plot) - cap, xlo, seq_len(n_plot) + cap, col = "#4682B4", lwd = 1.4)
   segments(xhi, seq_len(n_plot) - cap, xhi, seq_len(n_plot) + cap, col = "#4682B4", lwd = 1.4)
-  axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 0.9)
+  axis(2, at = seq_len(n_plot), labels = parse(text = sub("^V([0-9]+)$", "x[\\1]", sub("^others$", "'others'", lbl_plot))), las = 1, cex.axis = 0.9)
   abline(v = 0, col = "gray60", lty = 2); par(op)
 }
 
