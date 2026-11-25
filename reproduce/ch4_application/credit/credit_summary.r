@@ -74,3 +74,12 @@ summarise_cv(
                        paste0("summary_", sub("^sim_results_", "", prefix),
                               "_cv_ALL.md"))
 )
+
+# APL-TF vs BEOI on the folds where both converged (49 of 50)
+both <- which(!sapply(results_containers$TF, is.null) & !sapply(results_containers$BEOI, is.null))
+cat("\nAPL-TF vs BEOI on", length(both), "common folds\n")
+for (fam in c("TF", "BEOI")) {
+  M <- sapply(results_containers[[fam]][both], cv_metrics)
+  cat(sprintf("  %-5s MSE x 100 %.3f   MAE %.4f   Upsilon %.4f\n",
+              fam, mean(M["mse100", ]), mean(M["mae", ]), mean(M["upsilon", ])))
+}

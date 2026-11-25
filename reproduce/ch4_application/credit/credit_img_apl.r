@@ -233,69 +233,7 @@ if (has_zeta) {
 }
 
 # ==============================================================================
-# PLOT 3: Observed vs predicted — overlapping densities
-# ==============================================================================
-
-png(file.path(base_path, "plot_pred_vs_obs.png"),
-    width = img_width, height = img_height, res = img_res)
-old_par <- par(mar = c(4.5, 4.5, 2, 2))
-d_obs  <- density(all_ytest, bw = 0.02)
-d_pred <- density(all_muhat, bw = 0.02)
-xlim_r <- range(c(d_obs$x, d_pred$x))
-ylim_r <- c(0, max(c(d_obs$y, d_pred$y)) * 1.1)
-plot(d_obs, col = "gray30", lwd = 2,
-     xlim = xlim_r, ylim = ylim_r,
-     xlab = "LGD", ylab = "Density", main = "", las = 1)
-polygon(c(d_obs$x, rev(d_obs$x)),
-        c(d_obs$y, rep(0, length(d_obs$y))),
-        col = adjustcolor("gray30", alpha.f = 0.15), border = NA)
-lines(d_pred, col = "red4", lwd = 2, lty = 2)
-polygon(c(d_pred$x, rev(d_pred$x)),
-        c(d_pred$y, rep(0, length(d_pred$y))),
-        col = adjustcolor("red4", alpha.f = 0.15), border = NA)
-abline(v = mean(all_ytest), lty = 3, col = "gray30", lwd = 1.2)
-abline(v = mean(all_muhat), lty = 3, col = "red4",   lwd = 1.2)
-legend("topleft",
-       legend = c(expression(y[test]), expression(hat(mu))),
-       col = c("gray30", "red4"), lty = c(1, 2), lwd = c(2, 2),
-       fill = c(adjustcolor("gray30", 0.15), adjustcolor("red4", 0.15)),
-       border = NA, bty = "n", cex = 0.9)
-par(old_par)
-dev.off()
-
-# ==============================================================================
-# PLOT 4a: Residuals — density
-# ==============================================================================
-
-png(file.path(base_path, "plot_residuals_density.png"),
-    width = img_width, height = img_height, res = img_res)
-old_par <- par(mar = c(4.5, 4.5, 2, 2))
-hist(all_resid, breaks = 50, freq = FALSE,
-     col = "gray85", border = "white",
-     xlab = expression(y[test] - hat(mu)),
-     ylab = "Density", main = "", las = 1)
-lines(density(all_resid), col = "gray30", lwd = 2)
-abline(v = 0, col = "red4", lty = 2, lwd = 1.5)
-par(old_par)
-dev.off()
-
-# ==============================================================================
-# PLOT 4b: Residuals — boxplot
-# ==============================================================================
-
-png(file.path(base_path, "plot_residuals_boxplot.png"),
-    width = img_width, height = img_height, res = img_res)
-old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(all_resid, ylab = expression(y[test] - hat(mu)),
-        xaxt = "n", col = "gray85", border = "gray30",
-        outline = TRUE, las = 1, main = "")
-abline(h = 0, col = "red4", lty = 2, lwd = 1.5)
-axis(1, at = 1, labels = "Residuals")
-par(old_par)
-dev.off()
-
-# ==============================================================================
-# PLOT 5: Lambda — boxplot
+# PLOT 3: Lambda — boxplot
 # ==============================================================================
 
 png(file.path(base_path, "plot_lambda_boxplot.png"),
@@ -317,77 +255,7 @@ par(old_par)
 dev.off()
 
 # ==============================================================================
-# PLOT 6: Alpha_hat distribution — clipped KDE
-# ==============================================================================
-
-png(file.path(base_path, "plot_alpha_dist.png"),
-    width = img_width, height = img_height, res = img_res)
-old_par <- par(mar = c(4.5, 4.5, 2, 2))
-dens_alpha <- density(all_alpha_hat, bw = "SJ")
-in_range   <- dens_alpha$x >= 0 & dens_alpha$x <= 1
-dx         <- dens_alpha$x[in_range]
-dy         <- dens_alpha$y[in_range]
-ylim_top   <- max(dy) * 1.10
-hist(all_alpha_hat, breaks = 20, freq = FALSE,
-     col = "gray85", border = "white",
-     xlab = expression("Predicted boundary probability  " * hat(alpha)),
-     ylab = "Density", main = "", las = 1,
-     xlim = c(0, 1), ylim = c(0, ylim_top))
-lines(dx, dy, col = "gray30", lwd = 2)
-abline(v = mean(all_alpha_hat),   lty = 2, col = "red4",   lwd = 1.5)
-abline(v = median(all_alpha_hat), lty = 3, col = "gray40", lwd = 1.5)
-legend("topright",
-       legend = c("Kernel density",
-                  paste0("Mean = ",   round(mean(all_alpha_hat), 3)),
-                  paste0("Median = ", round(median(all_alpha_hat), 3))),
-       col = c("gray30", "red4", "gray40"),
-       lty = c(1, 2, 3), lwd = c(2, 1.5, 1.5),
-       bty = "n", cex = 0.85)
-par(old_par)
-dev.off()
-
-# ==============================================================================
-# PLOT 7: Alpha_hat vs mu_hat — loess + SE band
-# ==============================================================================
-
-png(file.path(base_path, "plot_alpha_vs_mu.png"),
-    width = img_width, height = img_height, res = img_res)
-old_par <- par(mar = c(5.5, 4.5, 2, 2))
-lo      <- loess(all_alpha_hat ~ all_muhat, span = 0.3)
-mu_seq  <- seq(min(all_muhat), quantile(all_muhat, 0.98), length.out = 500)
-lo_pred <- predict(lo, newdata = data.frame(all_muhat = mu_seq), se = TRUE)
-lo_fit  <- lo_pred$fit
-lo_hi   <- lo_fit + lo_pred$se.fit
-lo_lo   <- lo_fit - lo_pred$se.fit
-min_idx <- which.min(lo_fit)
-min_mu  <- mu_seq[min_idx]
-plot(all_muhat, all_alpha_hat,
-     pch = 19, cex = 0.3,
-     col = adjustcolor("gray30", alpha.f = 0.15),
-     xlab = expression("Predicted median  " * hat(mu)),
-     ylab = expression("Predicted boundary probability  " * hat(alpha)),
-     las = 1, main = "")
-polygon(c(mu_seq, rev(mu_seq)),
-        c(lo_hi,  rev(lo_lo)),
-        col = adjustcolor("red4", alpha.f = 0.15), border = NA)
-lines(mu_seq, lo_fit, col = "red4", lwd = 2)
-abline(v = min_mu, lty = 3, col = "gray40", lwd = 1.2)
-text(min_mu, par("usr")[4] * 0.97,
-     labels = bquote(hat(mu) == .(round(min_mu, 2))),
-     adj = c(-0.1, 1), col = "gray40", cex = 0.75)
-rug(all_muhat, col = adjustcolor("gray30", alpha.f = 0.05), ticksize = 0.02)
-legend("topleft",
-       legend = c("Observations", "Loess trend", "\u00b11 SE band"),
-       col    = c(adjustcolor("gray30", 0.5), "red4", adjustcolor("red4", 0.4)),
-       pch    = c(19, NA, NA), lty = c(NA, 1, NA), lwd = c(NA, 2, NA),
-       fill   = c(NA, NA, adjustcolor("red4", 0.15)),
-       border = c(NA, NA, NA),
-       bty    = "n", cex = 0.85)
-par(old_par)
-dev.off()
-
-# ==============================================================================
-# PLOTS 8-10: Coefficient forest plots — mu, sigma, alpha
+# PLOTS 4-6: Coefficient forest plots — mu, sigma, alpha
 # ==============================================================================
 
 plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
@@ -472,7 +340,7 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
 }
 
 # ==============================================================================
-# PLOTS 11-13: Selection lollipops — mu, sigma, alpha
+# PLOTS 7-9: Selection lollipops — mu, sigma, alpha
 # ==============================================================================
 
 lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,

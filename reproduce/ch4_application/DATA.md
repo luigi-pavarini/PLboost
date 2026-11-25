@@ -41,7 +41,7 @@ Predictive performance is assessed by **5-fold cross-validation repeated 10 time
 
 0. `build_df_lgd.r`   — builds `data/df_lgd_all.RData` from the Kaggle csv
 1. `credit_run.r`     — fits the six adjusted power logit generators and the one-inflated beta baseline (BEOI) over the 50 folds
-2. `credit_summary.r` — assembles the family-comparison table (MSE, MAE, Upsilon)
+2. `credit_summary.r` — assembles the family-comparison table (MSE, MAE, Upsilon) and the APL-TF vs BEOI comparison on the folds where both converged
 3. `credit_img_apl.r` — coefficient, selection and diagnostic plots for the chosen APL-t model (`fam <- "TF"`)
 4. `../essentials/selection_table.R credit/credit_img_apl.r` — the selection table (frequency, average coefficient, band avg ± 1.96 sd)
 

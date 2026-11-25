@@ -7,7 +7,7 @@
 # dissertation. PL differences vs the APL script: fields are error_pl / mae_pl,
 # lambda ~ 1 (scalar shape), and there is NO boundary probability -> the alpha
 # plots (plot_alpha_dist, plot_alpha_vs_mu, coef/sel alpha) are dropped.
-# Set `fam` to switch family; winner = "PE".
+# Set `fam` to switch family. The dissertation reports NO.
 # ==============================================================================
 
 suppressMessages({library(data.table)})
@@ -87,13 +87,7 @@ y_all       <- all_test_df$y
 errors_pl     <- sapply(sim_results, function(x) x$error_pl) * 100
 mae_pl        <- sapply(sim_results, function(x) x$mae_pl)
 upsilon_vec   <- sapply(sim_results, function(x) x$upsilon)
-zeta_best_vec <- sapply(sim_results, function(x) x$zeta_best)
-all_ytest     <- unlist(lapply(sim_results, function(x) x$y_test))
-all_muhat     <- unlist(lapply(sim_results, function(x) x$mu_hat))
-all_resid     <- all_ytest - all_muhat
 lambda_hat_vec <- sapply(sim_results, function(x) exp(x$coef_lambda["(Intercept)"] + attr(x$coef_lambda, "offset")))
-
-has_zeta <- !all(sapply(zeta_best_vec, is.null))
 
 build_coef_mat <- function(coef_list, exclude = "(Intercept)") {
   all_vars <- unique(unlist(lapply(coef_list, function(cv) names(cv)[names(cv) != exclude])))
@@ -151,74 +145,7 @@ one_box(mae_pl,      "MAE",                      "plot_mae_dist.png",     4)
 one_box(upsilon_vec, expression(Upsilon),        "plot_upsilon_dist.png", 4)
 
 # ==============================================================================
-# PLOT 2d: Zeta selection
-# ==============================================================================
-if (has_zeta) {
-  png(file.path(base_path, "plot_zeta_selection.png"),
-      width = img_width, height = img_height, res = img_res)
-  op <- par(mar = c(4.5, 4.5, 2, 2))
-  zeta_tab <- table(unlist(zeta_best_vec))
-  # Topo do eixo no próximo múltiplo de 10 acima da barra mais alta, para o
-  # eixo vertical não terminar abaixo dela (padrão do barplot sem ylim).
-  ytop_z  <- max(10 * ceiling(max(zeta_tab) / 10), n_success)
-  ticks_z <- seq(0, ytop_z, by = 10)
-  barplot(zeta_tab, xlab = expression(zeta), ylab = "Number of CV entries",
-          col = "gray85", border = "gray30", las = 1, main = "",
-          ylim = c(0, ytop_z), yaxt = "n")
-  axis(2, at = ticks_z, las = 1)
-  abline(h = 0, col = "gray60")
-  legend("topright", legend = paste0("Most selected: zeta = ",
-         names(zeta_tab)[which.max(zeta_tab)], "  (", max(zeta_tab), "/", n_success, ")"),
-         bty = "n", cex = 0.85)
-  par(op); dev.off()
-}
-
-# ==============================================================================
-# PLOT 3: Observed vs predicted — overlapping densities
-# ==============================================================================
-png(file.path(base_path, "plot_pred_vs_obs.png"),
-    width = img_width, height = img_height, res = img_res)
-op <- par(mar = c(4.5, 4.5, 2, 2))
-d_obs  <- density(all_ytest, bw = 0.02); d_pred <- density(all_muhat, bw = 0.02)
-xlim_r <- range(c(d_obs$x, d_pred$x)); ylim_r <- c(0, max(c(d_obs$y, d_pred$y)) * 1.1)
-plot(d_obs, col = "gray30", lwd = 2, xlim = xlim_r, ylim = ylim_r,
-     xlab = "Conceito Enade / 5", ylab = "Density", main = "", las = 1)
-polygon(c(d_obs$x, rev(d_obs$x)), c(d_obs$y, rep(0, length(d_obs$y))),
-        col = adjustcolor("gray30", 0.15), border = NA)
-lines(d_pred, col = "red4", lwd = 2, lty = 2)
-polygon(c(d_pred$x, rev(d_pred$x)), c(d_pred$y, rep(0, length(d_pred$y))),
-        col = adjustcolor("red4", 0.15), border = NA)
-abline(v = mean(all_ytest), lty = 3, col = "gray30", lwd = 1.2)
-abline(v = mean(all_muhat), lty = 3, col = "red4",   lwd = 1.2)
-legend("topleft", legend = c(expression(y[test]), expression(hat(mu))),
-       col = c("gray30", "red4"), lty = c(1, 2), lwd = c(2, 2),
-       fill = c(adjustcolor("gray30", 0.15), adjustcolor("red4", 0.15)),
-       border = NA, bty = "n", cex = 0.9)
-par(op); dev.off()
-
-# ==============================================================================
-# PLOT 4a/4b: Residuals — density + boxplot
-# ==============================================================================
-png(file.path(base_path, "plot_residuals_density.png"),
-    width = img_width, height = img_height, res = img_res)
-op <- par(mar = c(4.5, 4.5, 2, 2))
-hist(all_resid, breaks = 8, freq = FALSE, col = "gray85", border = "white",
-     xlab = expression(y[test] - hat(mu)), ylab = "Density", main = "", las = 1)
-lines(density(all_resid), col = "gray30", lwd = 2)
-abline(v = 0, col = "red4", lty = 2, lwd = 1.5)
-par(op); dev.off()
-
-png(file.path(base_path, "plot_residuals_boxplot.png"),
-    width = img_width, height = img_height, res = img_res)
-op <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(all_resid, ylab = expression(y[test] - hat(mu)), xaxt = "n",
-        col = "gray85", border = "gray30", outline = TRUE, las = 1, main = "")
-abline(h = 0, col = "red4", lty = 2, lwd = 1.5)
-axis(1, at = 1, labels = "Residuals")
-par(op); dev.off()
-
-# ==============================================================================
-# PLOT 5: Lambda — boxplot  (lambda ~ 1 scalar shape)
+# PLOT 3: Lambda — boxplot  (lambda ~ 1 scalar shape)
 # ==============================================================================
 png(file.path(base_path, "plot_lambda_boxplot.png"),
     width = img_width, height = img_height, res = img_res)
@@ -234,7 +161,7 @@ legend("topright", legend = paste0("Mean = ", round(mean(lambda_hat_vec), 3),
 par(op); dev.off()
 
 # ==============================================================================
-# PLOTS 6-9: Coefficient forests + selection lollipops (mu, sigma)
+# PLOTS 4-7: Coefficient forests + selection lollipops (mu, sigma)
 #            (verbatim styling from the APL forest/lollipop functions)
 # ==============================================================================
 plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
