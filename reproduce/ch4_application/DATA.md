@@ -14,7 +14,6 @@ repository, so `PLBOOST_OUT` only needs the data:
 $PLBOOST_OUT/
   data/         # raw files you download + the prepared .RData (see below)
   cross_val/    # created by the scripts for results and figures
-  final_fit/    # created by the supplementary final-fit scripts
 ```
 
 ---
@@ -44,13 +43,7 @@ Predictive performance is assessed by **5-fold cross-validation repeated 10 time
 1. `credit_run.r`     — fits the six adjusted power logit generators and the one-inflated beta baseline (BEOI) over the 50 folds
 2. `credit_summary.r` — assembles the family-comparison table (MSE, MAE, Upsilon)
 3. `credit_img_apl.r` — coefficient, selection and diagnostic plots for the chosen APL-t model (`fam <- "TF"`)
-4. `credit_img_beoi.r` — the BEOI baseline plots
-5. `../essentials/selection_table.R credit/credit_img_apl.r` — the selection table (frequency, average coefficient, band avg ± 1.96 sd)
-
-Supplementary, not in the text of dissertation v1.0 — diagnostics of a single fit on the
-full sample, in `credit/final_fit/`: `credit_final_fit.R` (APL-t final fit and quantile
-residuals), then `credit_qres_envelope.R` (three residual panels with a simulated
-envelope) and `credit_beoi_qres.R` (the same panels for BEOI).
+4. `../essentials/selection_table.R credit/credit_img_apl.r` — the selection table (frequency, average coefficient, band avg ± 1.96 sd)
 
 ---
 
@@ -73,9 +66,6 @@ so the plain power logit class, without a point mass, is used. Same 50-fold cros
    `$PLBOOST_OUT/data/censo_superior_2023/microdados_censo_da_educacao_superior_2023/dados/MICRODADOS_CADASTRO_CURSOS_2023.CSV`
    (the unzipped Censo da Educação Superior microdata)
 2. `inep_run.r`      — fits the six power logit generators and the beta baseline over the 50 folds
-3. `inep_summary.r`, `inep_table.r` — family-comparison table and predictive summary
+3. `inep_summary.r`  — family-comparison table and predictive summary
 4. `inep_img.r`      — coefficient, selection and diagnostic plots for the PL-NO model
 5. `../essentials/selection_table.R inep/inep_img.r` — the selection table
-
-Supplementary, not in the text of dissertation v1.0: `inep/final_fit/inep_final_fit.R`,
-the PL-NO final fit on the full sample with a quantile-residual envelope.
