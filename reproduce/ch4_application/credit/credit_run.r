@@ -41,6 +41,7 @@ library(caret)
 
 app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path,"cross_val", "results")
+dir.create(results_path, showWarnings = FALSE, recursive = TRUE)
 
 library(PLboost); library(PLreg); library(gamboostLSS)   # PL / APL families and distributions
 source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
