@@ -15,15 +15,15 @@ suppressPackageStartupMessages({
 
 
 
-# --- data ---
+# === data =====================================================================
 
 # df <- ... (a data.frame with response + covariates)
 # APL is for y in [0,1], with mass at c = 0 or c = 1.
 # y <- ...  # must be your response variable (e.g. "lgd")
 
-# --- settings ---
+# === settings =================================================================
 
-fam  <- "NO"  # "NO","LO","TF","PE","Hyp","SN","SLASH" # must be a valid family name
+fam <- "NO" # "NO","LO","TF","PE","Hyp","SN","SLASH" # must be a valid family name
 zeta <- 2 # must be > 0
 c_infl <- 1 # 0 for mass at 0, 1 for mass at 1
 
@@ -34,7 +34,7 @@ apl_family <- APL(
   stabilization = "MAD" # "none", "MAD", "L2"
 )
 
-# --- formulas ---
+# === formulas =================================================================
 
 # You can use all columns in df except the response:
 # mu_formula    <- y ~ .
@@ -42,11 +42,11 @@ apl_family <- APL(
 # alpha_formula <- y ~ .
 #
 # Or specify subsets for each parameter:
-mu_formula    <- NULL # e.g. "y ~ V1 + V2 + V3 + V4"
+mu_formula <- NULL # e.g. "y ~ V1 + V2 + V3 + V4"
 sigma_formula <- NULL # e.g. "y ~ V3 + V4 + V5"
 alpha_formula <- NULL # e.g. "y ~ U1 + U2"
 
-# --- fit ---
+# === fit ======================================================================
 
 # There are many options for the control parameters. Here are some common ones:
 # - mstop: vector of length 4 (mu, sigma, lambda, alpha)
@@ -61,9 +61,9 @@ fit <- glmboostLSS(
     lambda = y ~ 1, # keep lambda as intercept-only
     alpha  = alpha_formula
   ),
-  data     = df,
+  data = df,
   families = apl_family,
-  control  = boost_control(
+  control = boost_control(
     mstop = c(mu = 500, sigma = 500, lambda = 50, alpha = 500), # must be a vector of length 4
     nu = 0.01, # must be between 0 and 1
     trace = TRUE # TRUE or FALSE
@@ -75,4 +75,3 @@ print(coef(fit, parameter = "mu"))
 print(coef(fit, parameter = "sigma"))
 print(exp(unlist(coef(fit, parameter = "lambda"))))
 print(coef(fit, parameter = "alpha"))
-

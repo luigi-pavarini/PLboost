@@ -21,21 +21,25 @@
 # ==============================================================================
 
 plot_worm <- function(res, main = "", conf = 0.95, ylim = NULL) {
-  n  <- length(res)
+  n <- length(res)
   qq <- qqnorm(res, plot = FALSE)
-  d  <- qq$y - qq$x
-  k  <- qnorm(1 - (1 - conf) / 2)
-  z  <- seq(-4, 4, by = 0.05)
+  d <- qq$y - qq$x
+  k <- qnorm(1 - (1 - conf) / 2)
+  z <- seq(-4, 4, by = 0.05)
   se <- sqrt(pnorm(z) * (1 - pnorm(z)) / n) / dnorm(z)
   if (is.null(ylim)) ylim <- range(d, k * se[abs(z) <= 3], -k * se[abs(z) <= 3])
 
-  plot(qq$x, d, pch = "+", las = 1, cex = 0.8, ylim = ylim, xlim = c(-3, 3),
-       xlab = "Quantile N(0,1)", ylab = "Deviation", main = main)
-  lines(z,  k * se, lty = 2)
+  plot(qq$x, d,
+    pch = "+", las = 1, cex = 0.8, ylim = ylim, xlim = c(-3, 3),
+    xlab = "Quantile N(0,1)", ylab = "Deviation", main = main
+  )
+  lines(z, k * se, lty = 2)
   lines(z, -k * se, lty = 2)
   abline(h = 0, col = "grey60")
-  legend("bottom", bty = "n",
-         legend = c(sprintf("mean %.3f", mean(res)), sprintf("sd %.3f", sd(res))))
+  legend("bottom",
+    bty = "n",
+    legend = c(sprintf("mean %.3f", mean(res)), sprintf("sd %.3f", sd(res)))
+  )
 
   p_x <- pnorm(qq$x)
   invisible(mean(abs(d) > k * sqrt(p_x * (1 - p_x) / n) / dnorm(qq$x)))
