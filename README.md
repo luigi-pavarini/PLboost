@@ -101,7 +101,7 @@ of the master thesis, and is not part of the installed package.
 
 | Directory | What it produces |
 |---|---|
-| `ch3_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario (Sections 3.1 and 3.2): `validation_multirep.R` writes `validation_results.csv` and `validation_replications.csv`, `make_tables.py` turns the first into Tables 3.1 (PL) and 3.2 (APL), and `appendixA_boxplots.R` draws Figures A.1 to A.5 from the second. Seeded, so a rerun gives the published numbers |
+| `ch3_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario (Sections 3.1 and 3.2): `validation_multirep.R` writes `validation_results.csv`, with the numbers of Tables 3.1 (PL) and 3.2 (APL), and `validation_replications.csv`, from which `appendixA_boxplots.R` draws Figures A.1 to A.5. Seeded, so a rerun gives the published numbers |
 | `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel: `simulation_PL.R` (run once per generator, set `fam`) and `simulation_APL.R` store the results; the scripts in `figures/` draw every figure of Chapter 3 from them |
 | `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, adjusted PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce_master_thesis/ch4_application/DATA.md) |
 
@@ -110,7 +110,6 @@ variable, defaulting to the working directory:
 
 ```bash
 PLBOOST_OUT=~/plboost-output Rscript reproduce_master_thesis/ch3_validation/validation_multirep.R
-PLBOOST_OUT=~/plboost-output python3 reproduce_master_thesis/ch3_validation/make_tables.py
 PLBOOST_OUT=~/plboost-output Rscript reproduce_master_thesis/ch3_validation/appendixA_boxplots.R
 ```
 
