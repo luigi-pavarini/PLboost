@@ -76,6 +76,8 @@ parameter used by TF, PE, Hyp, SN and SLASH; and `stabilization`, one of `"none"
 
 The distribution functions `dAPL()`, `pAPL()`, `qAPL()` and `rAPL()` are exported too.
 
+Every exported function has a help page: `?PowerLogit`, `?APL`, `?dAPL`, `?v_function`.
+
 ## Notes on the implementation
 
 **Links.** The median uses a logit link, the dispersion and skewness a log link, and the

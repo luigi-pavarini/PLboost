@@ -28,7 +28,7 @@ Imports:
 Suggests:
     faux,
     Formula
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Collate:
     'v_function.R'
     'APL_distributions.R'

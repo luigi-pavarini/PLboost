@@ -13,9 +13,32 @@
 #
 # ==============================================================================
 
+#' Adjusted power logit families of each parameter
+#'
+#' The \code{mboost} \code{Family} objects behind \code{\link{APL}}, one
+#' per parameter. Most users call \code{APL()}. These are exported for custom
+#' combinations.
+#'
+#' @param mu,sigma,lambda,alpha value of the other parameters, or \code{NULL}
+#'   to take them from the current fit.
+#' @param family density generator of the power logit class: \code{"NO"}
+#'   (normal), \code{"LO"} (logistic), \code{"TF"} (Student t), \code{"PE"}
+#'   (power exponential), \code{"Hyp"} (hyperbolic), \code{"SN"}
+#'   (sinh-normal) or \code{"SLASH"} (slash).
+#' @param zeta extra shape parameter of the generator, used by \code{"TF"},
+#'   \code{"PE"}, \code{"Hyp"}, \code{"SN"} and \code{"SLASH"}.
+#' @param stabilization scaling of the negative gradient: \code{"none"},
+#'   \code{"MAD"} or \code{"L2"}, as in \code{gamboostLSS}.
+#' @param c boundary with the point mass: 0 or 1.
+#' @return A \code{Family} object.
+#' @name APL_submodels
+NULL
+
 # ==============================================================================
 # APL Family for mu (location parameter)
 # ==============================================================================
+#' @rdname APL_submodels
+#' @export
 APLMu <- function(sigma = NULL,
                   lambda = NULL,
                   alpha = NULL,
@@ -95,6 +118,8 @@ APLMu <- function(sigma = NULL,
 # ==============================================================================
 # APL Family for sigma (dispersion parameter)
 # ==============================================================================
+#' @rdname APL_submodels
+#' @export
 APLSigma <- function(mu = NULL,
                      lambda = NULL,
                      alpha = NULL,
@@ -186,6 +211,8 @@ APLSigma <- function(mu = NULL,
 # ==============================================================================
 # APL Family for lambda (shape parameter)
 # ==============================================================================
+#' @rdname APL_submodels
+#' @export
 APLLambda <- function(mu = NULL,
                       sigma = NULL,
                       alpha = NULL,
@@ -280,6 +307,8 @@ APLLambda <- function(mu = NULL,
 # ==============================================================================
 # APL Family for alpha (boundary probability)
 # ==============================================================================
+#' @rdname APL_submodels
+#' @export
 APLAlpha <- function(mu = NULL,
                      sigma = NULL,
                      lambda = NULL,
@@ -364,14 +393,47 @@ APLAlpha <- function(mu = NULL,
   )
 }
 
-# ==============================================================================
-# APL Family Constructor (Full 4-parameter model)
-# ==============================================================================
-# 4-parameter (mu, sigma, lambda, alpha) Adjusted Power Logit
-# Example:
-#   fam <- APL(family = "NO", c = 0)  # Normal errors, mass at 0
-#   fit <- glmboostLSS(y ~ X | X | X | X, families = fam, data = df)
-# ==============================================================================
+#' Adjusted power logit family for gamboostLSS
+#'
+#' Build the \code{Families} object of the adjusted power logit (APL)
+#' distribution: a power logit distribution on (0, 1) with a point mass at the
+#' boundary \code{c}, 0 or 1. It has four submodels: the median \code{mu}
+#' (logit link), the dispersion \code{sigma} (log link), the skewness
+#' \code{lambda} (log link) and the boundary probability
+#' \code{alpha} = P(Y = c) (logit link).
+#'
+#' @param family density generator of the power logit class: \code{"NO"}
+#'   (normal), \code{"LO"} (logistic), \code{"TF"} (Student t), \code{"PE"}
+#'   (power exponential), \code{"Hyp"} (hyperbolic), \code{"SN"}
+#'   (sinh-normal) or \code{"SLASH"} (slash).
+#' @param zeta extra shape parameter of the generator, used by \code{"TF"},
+#'   \code{"PE"}, \code{"Hyp"}, \code{"SN"} and \code{"SLASH"}.
+#' @param stabilization scaling of the negative gradient: \code{"none"},
+#'   \code{"MAD"} or \code{"L2"}, as in \code{gamboostLSS}.
+#' @param c boundary with the point mass: 0 or 1.
+#'
+#' @details \code{lambda} is a scalar shared by all observations, so it must
+#'   enter the formula as \code{lambda = y ~ 1}. The families stop otherwise.
+#'
+#' @return A \code{Families} object.
+#' @seealso \code{\link{dAPL}} for the distribution functions,
+#'   \code{\link{PowerLogit}} for a response without a point mass,
+#'   \code{\link{APL_submodels}} for the families of each parameter.
+#' @examples
+#' library(gamboostLSS)
+#' set.seed(1206)
+#' n <- 300
+#' x <- rnorm(n)
+#' y <- rAPL(n, alpha = plogis(-1 + 0.5 * x), mu = plogis(0.5 + x),
+#'           sigma = exp(0.2 * x), lambda = 1.2, family = "NO", c = 1)
+#' fit <- glmboostLSS(
+#'   list(mu = y ~ x, sigma = y ~ x, lambda = y ~ 1, alpha = y ~ x),
+#'   data = data.frame(y, x),
+#'   families = APL(family = "NO", c = 1, stabilization = "MAD"),
+#'   control = boost_control(mstop = 300, nu = 0.01)
+#' )
+#' coef(fit)
+#' @export
 APL <- function(stabilization = c("none", "MAD", "L2"),
                 family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
                 c = 0, # which boundary gets mass: 0 or 1
@@ -422,56 +484,3 @@ APL <- function(stabilization = c("none", "MAD", "L2"),
     )
   )
 }
-
-# ==============================================================================
-# USAGE GUIDE: Adjusted Power Logit (APL) Models
-# ==============================================================================
-#
-# Available Model:
-# - APL():  Full 4-parameter model (mu, sigma, lambda, alpha)
-#
-# Parameter c controls which boundary gets probability mass:
-# - c = 0: Mass at 0 (point mass at zero)
-# - c = 1: Mass at 1 (point mass at one)
-#
-# Available error distributions:
-# "NO" = Normal, "LO" = Logistic, "TF" = Student-t, "PE" = Power Exponential,
-# "SN" = Sinh-Normal, "Hyp" = Hyperbolic, "SLASH" = Slash
-# ==============================================================================
-
-# ==============================================================================
-# BASIC EXAMPLES
-# ==============================================================================
-
-# # Data with exact 0s
-# fam_apl_0 <- APL(family = "NO", c = 0)  # 4-parameter, mass at 0
-# fit_apl_0 <- glmboostLSS(
-#   formula = list(mu = y ~ ., sigma = y ~ ., lambda = y ~ ., alpha = y ~ .),
-#   data = data,
-#   families = fam_apl_0,
-#   control = boost_control(mstop = 150, nu = 0.01)
-# )
-#
-# # Data with exact 1s
-# fam_apl_1 <- APL(family = "TF", c = 1, zeta = 3)  # 4-parameter, mass at 1, robust
-# fit_apl_1 <- glmboostLSS(
-#   formula = list(mu = y ~ ., sigma = y ~ ., lambda = y ~ ., alpha = y ~ .),
-#   data = data,
-#   families = fam_apl_1,
-#   control = boost_control(mstop = 150, nu = 0.01)
-# )
-
-# ==============================================================================
-# PARAMETER INTERPRETATION
-# ==============================================================================
-
-# μ (mu):     Location parameter for continuous part
-# σ (sigma):  Dispersion parameter for continuous part
-# λ (lambda): Shape/asymmetry parameter for continuous part
-# α (alpha):  Probability of boundary values (0 or 1)
-
-# Transform predictions:
-# plogis(pred$mu)     # mu ∈ (0,1)
-# exp(pred$sigma)     # sigma > 0
-# exp(pred$lambda)    # lambda > 0
-# plogis(pred$alpha)  # alpha ∈ (0,1)

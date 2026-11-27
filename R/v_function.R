@@ -1,30 +1,25 @@
-# ==============================================================================
-# v_function: Self-sufficient score helpers (z, v, v')
-#
-# Arguments:
-#   y      : response vector, values in (0,1)
-#   mu     : fitted mean vector, values in (0,1)
-#   sigma  : dispersion — scalar or vector (one per observation)
-#   lambda : power parameter — scalar
-#   family : character flag — one of "NO", "TF", "LO", "SN",
-#            "PE", "Hyp", "SLASH"
-#   zeta   : extra shape parameter — scalar (default = 2)
-#            used by TF, SN, PE, Hyp, SLASH
-#
-# Returns: list with named elements
-#   z  — standardised latent residual (vector, length = length(y))
-#   v  — weight function v(z)        (vector)
-#   dv — derivative v'(z)            (vector)
-#
-# Notes:
-#   * When lambda = 0 the Power-Logit collapses to the Log-Log
-#     model; z is computed via the limit form (advisor's version).
-#   * When lambda != 0, z uses the logit-link of y^lambda and
-#     mu^lambda (VGAM::logitlink).
-#
-# Requirements: VGAM, zipfR
-# ==============================================================================
-
+#' Score helpers of the power logit density
+#'
+#' Standardized latent residual \code{z}, weight function \code{v(z)} of the
+#' density generator and its derivative, used by the gradients of the PL and
+#' APL families.
+#'
+#' @param y response values in (0, 1).
+#' @param mu median, in (0, 1).
+#' @param sigma dispersion, a scalar or one value per observation.
+#' @param lambda skewness, a scalar. With \code{lambda = 0} the log-log limit
+#'   of the power logit is used.
+#' @param family density generator: \code{"NO"}, \code{"TF"}, \code{"LO"},
+#'   \code{"SN"}, \code{"PE"}, \code{"Hyp"} or \code{"SLASH"}.
+#' @param zeta extra shape parameter, used by \code{"TF"}, \code{"SN"},
+#'   \code{"PE"}, \code{"Hyp"} and \code{"SLASH"}.
+#'
+#' @return A list with \code{z}, \code{v} and \code{dv}, each of the length
+#'   of \code{y}.
+#' @examples
+#' v_function(c(0.2, 0.5, 0.8), mu = 0.5, sigma = 1, lambda = 1.2,
+#'            family = "NO")
+#' @export
 v_function <- function(y, mu, sigma, lambda, family, zeta = 2) {
   # === Input validation =======================================================
   valid_families <- c("NO", "TF", "LO", "SN", "PE", "Hyp", "SLASH")

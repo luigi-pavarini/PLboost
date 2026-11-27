@@ -12,11 +12,33 @@
 # Requirements: PLreg, mboost, gamboostLSS
 # ==============================================================================
 
+#' Power logit families of each parameter
+#'
+#' The \code{mboost} \code{Family} objects behind \code{\link{PowerLogit}}
+#' and \code{\link{GJS}}, one per parameter. Most users call the
+#' constructors. These are exported for custom combinations.
+#'
+#' @param mu,sigma,lambda value of the other parameters, or \code{NULL} to
+#'   take them from the current fit.
+#' @param family density generator of the power logit class: \code{"NO"}
+#'   (normal), \code{"LO"} (logistic), \code{"TF"} (Student t), \code{"PE"}
+#'   (power exponential), \code{"Hyp"} (hyperbolic), \code{"SN"}
+#'   (sinh-normal) or \code{"SLASH"} (slash).
+#' @param zeta extra shape parameter of the generator, used by \code{"TF"},
+#'   \code{"PE"}, \code{"Hyp"}, \code{"SN"} and \code{"SLASH"}.
+#' @param stabilization scaling of the negative gradient: \code{"none"},
+#'   \code{"MAD"} or \code{"L2"}, as in \code{gamboostLSS}.
+#' @return A \code{Family} object.
+#' @name PL_submodels
+NULL
+
 # ==============================================================================
 # Custom Family for mu (location)
 # eta_mu = f; mu = plogis(f)
 # Chain rule: dℓ/df = (dℓ/dμ) * (dμ/df), with dμ/df = logistic'(f)
 # ==============================================================================
+#' @rdname PL_submodels
+#' @export
 PLMu <- function(sigma = NULL,
                  lambda = NULL,
                  family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
@@ -82,6 +104,8 @@ PLMu <- function(sigma = NULL,
 # eta_sigma = f; sigma = exp(f)
 # Chain rule: dℓ/df = (dℓ/dσ) * (dσ/df), with dσ/df = exp(f) = σ
 # ==============================================================================
+#' @rdname PL_submodels
+#' @export
 PLSigma <- function(mu = NULL,
                     lambda = NULL,
                     family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
@@ -155,6 +179,8 @@ PLSigma <- function(mu = NULL,
 # eta_lambda = g; lambda = exp(g)
 # Chain rule: dℓ/df = (dℓ/dλ) * (dλ/df), with dλ/df = exp(g) = λ
 # ==============================================================================
+#' @rdname PL_submodels
+#' @export
 PLLambda <- function(mu = NULL,
                      sigma = NULL,
                      family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
@@ -225,14 +251,46 @@ PLLambda <- function(mu = NULL,
   )
 }
 
-# ==============================================================================
-# Combined Power-Logit Family Constructor for gamboostLSS
-# - 3-parameter (mu, sigma, lambda), with λ estimable.
-# - To keep λ constant (no regression), fit with formula `| 1` for λ.
-# Example:
-#   fam <- PowerLogit(family = "NO", zeta = 2)
-#   fit <- glmboostLSS(y ~ X | X | 1, families = fam, data = df)
-# ==============================================================================
+#' Power logit families for gamboostLSS
+#'
+#' Build the \code{Families} object of the power logit (PL) distribution for
+#' \code{\link[gamboostLSS]{glmboostLSS}} and
+#' \code{\link[gamboostLSS]{gamboostLSS}}. \code{PowerLogit()} has three
+#' submodels: the median \code{mu} (logit link), the dispersion \code{sigma}
+#' (log link) and the skewness \code{lambda} (log link). \code{GJS()} is the
+#' special case \code{lambda = 1} (generalized Johnson SB), with submodels
+#' \code{mu} and \code{sigma}.
+#'
+#' @param family density generator of the power logit class: \code{"NO"}
+#'   (normal), \code{"LO"} (logistic), \code{"TF"} (Student t), \code{"PE"}
+#'   (power exponential), \code{"Hyp"} (hyperbolic), \code{"SN"}
+#'   (sinh-normal) or \code{"SLASH"} (slash).
+#' @param zeta extra shape parameter of the generator, used by \code{"TF"},
+#'   \code{"PE"}, \code{"Hyp"}, \code{"SN"} and \code{"SLASH"}.
+#' @param stabilization scaling of the negative gradient: \code{"none"},
+#'   \code{"MAD"} or \code{"L2"}, as in \code{gamboostLSS}.
+#'
+#' @details \code{lambda} is a scalar shared by all observations, so it must
+#'   enter the formula as \code{lambda = y ~ 1}. The families stop otherwise.
+#'
+#' @return A \code{Families} object.
+#' @seealso \code{\link{APL}} for a response with a point mass at 0 or 1,
+#'   \code{\link{PL_submodels}} for the families of each parameter.
+#' @examples
+#' library(gamboostLSS)
+#' set.seed(1206)
+#' n <- 200
+#' x <- rnorm(n)
+#' y <- PLreg::rPL(n, mu = plogis(0.5 + x), sigma = 1, lambda = 1.2,
+#'                 family = "NO")
+#' fit <- glmboostLSS(
+#'   list(mu = y ~ x, sigma = y ~ x, lambda = y ~ 1),
+#'   data = data.frame(y, x),
+#'   families = PowerLogit(family = "NO", stabilization = "MAD"),
+#'   control = boost_control(mstop = 300, nu = 0.01)
+#' )
+#' coef(fit)
+#' @export
 PowerLogit <- function(stabilization = c("none", "MAD", "L2"),
                        family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
                        zeta = 2) {
@@ -263,15 +321,8 @@ PowerLogit <- function(stabilization = c("none", "MAD", "L2"),
   )
 }
 
-# ==============================================================================
-# GJS Family Constructor (λ fixed = 1) for gamboostLSS
-# - 2-parameter family (mu, sigma). λ is not estimated.
-# - Reuses PLMu and PLSigma from Power-Logit, with lambda = 1.
-#
-# Example:
-#   fam <- GJS(family = "NO", zeta = 2)
-#   fit <- glmboostLSS(y ~ X | X, families = fam, data = df)
-# ==============================================================================
+#' @rdname PowerLogit
+#' @export
 GJS <- function(stabilization = c("none", "MAD", "L2"),
                 family = c("NO", "LO", "TF", "PE", "Hyp", "SN", "SLASH"),
                 zeta = 2) {

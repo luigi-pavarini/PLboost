@@ -35,7 +35,7 @@
 #'
 #' For \code{dAPL}, observations at y = c return \code{alpha} (the point mass probability).
 #'
-#' @name APL
+#' @name APL_distribution
 #' @examples
 #' # PL with a point mass at zero, normal family
 #' dAPL(c(0, 0.3, 0.5, 1),
@@ -57,7 +57,7 @@
 # ==============================================================================
 # dAPL: density (with point mass at c)
 # ==============================================================================
-#' @rdname APL
+#' @rdname APL_distribution
 #' @export
 dAPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  log = FALSE) {
@@ -101,7 +101,7 @@ dAPL <- function(x, alpha, mu, sigma, lambda, zeta = 2, family, c,
 # ==============================================================================
 # pAPL: CDF
 # ==============================================================================
-#' @rdname APL
+#' @rdname APL_distribution
 #' @export
 pAPL <- function(q, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  lower.tail = TRUE, log.p = FALSE) {
@@ -179,7 +179,7 @@ pAPL <- function(q, alpha, mu, sigma, lambda, zeta = 2, family, c,
 # ==============================================================================
 # qAPL: quantile function
 # ==============================================================================
-#' @rdname APL
+#' @rdname APL_distribution
 #' @export
 qAPL <- function(p, alpha, mu, sigma, lambda, zeta = 2, family, c,
                  lower.tail = TRUE, log.p = FALSE) {
@@ -248,7 +248,7 @@ qAPL <- function(p, alpha, mu, sigma, lambda, zeta = 2, family, c,
 # ==============================================================================
 # rAPL: random generation
 # ==============================================================================
-#' @rdname APL
+#' @rdname APL_distribution
 #' @export
 rAPL <- function(n, alpha, mu, sigma, lambda, zeta = 2, family, c) {
   if (!(c %in% c(0, 1))) {
