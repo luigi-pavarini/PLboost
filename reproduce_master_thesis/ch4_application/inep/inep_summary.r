@@ -11,33 +11,37 @@
 # Output: summary_inep_ES_cv_ALL.md  (next to the .RData files)
 # ==============================================================================
 
-# ── PER-APP PARAMETERS (only this block differs between apps) ─────────────────
-# --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
+# === PER-APP PARAMETERS (only this block differs between apps) ================
+# === resolucao de caminho relativa a este arquivo (nao depende de outras pastas) ===
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {
     o <- sys.frame(i)$ofile
-    if (!is.null(o)) return(dirname(normalizePath(o)))
+    if (!is.null(o)) {
+      return(dirname(normalizePath(o)))
+    }
   }
-  a  <- commandArgs(trailingOnly = FALSE)
+  a <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
-  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
-  if (length(sp)) return(dirname(normalizePath(sp)))
+  sp <- gsub("~+~", " ", sp, fixed = TRUE) # Rscript writes spaces as ~+~
+  if (length(sp)) {
+    return(dirname(normalizePath(sp)))
+  }
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
-app_name     <- "inep_appl"
-prefix       <- "sim_results_medicina_SP"            # load_cv_results prefix (matches inep_run_cv_10rep.r output)
+app_path <- Sys.getenv("PLBOOST_OUT", unset = ".") # set PLBOOST_OUT (must contain data/)
+app_name <- "inep_appl"
+prefix <- "sim_results_medicina_SP" # load_cv_results prefix (matches inep_run_cv_10rep.r output)
 family_order <- c("NO", "TF", "LO", "PE", "SN", "SLASH", "Hyp", "Beta")
-K_FOLDS      <- 5
-R_REPEATS    <- 10
-# ─────────────────────────────────────────────────────────────────────────────
+K_FOLDS <- 5
+R_REPEATS <- 10
+# ==============================================================================
 
 results_path <- file.path(app_path, "cross_val", "results")
 source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
 source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 
-TOTAL_ENTRIES <- K_FOLDS * R_REPEATS                         # 50 = error-bar population
+TOTAL_ENTRIES <- K_FOLDS * R_REPEATS # 50 = error-bar population
 
 # Load each family's MERGED results (all batch tags _1/_2/_3). If a family has no files
 # yet, keep an all-NULL slot vector so the table still renders ( "—" / 0/50 ).
@@ -55,12 +59,18 @@ results_containers <- setNames(lapply(family_order, function(fam) {
 # column and footer read out of 50, and SD is over the pooled folds.
 summarise_cv(
   results_containers = results_containers,
-  family_order       = family_order,
-  meta = list(app = app_name, k_folds = K_FOLDS, r_repeats = R_REPEATS,
-              repeat_start = 1, repeat_end = R_REPEATS,
-              batch_entries = TOTAL_ENTRIES, total_entries = TOTAL_ENTRIES,
-              batch_tag = "ALL"),
-  out_file = file.path(results_path,
-                       paste0("summary_", sub("^sim_results_", "", prefix),
-                              "_cv_ALL.md"))
+  family_order = family_order,
+  meta = list(
+    app = app_name, k_folds = K_FOLDS, r_repeats = R_REPEATS,
+    repeat_start = 1, repeat_end = R_REPEATS,
+    batch_entries = TOTAL_ENTRIES, total_entries = TOTAL_ENTRIES,
+    batch_tag = "ALL"
+  ),
+  out_file = file.path(
+    results_path,
+    paste0(
+      "summary_", sub("^sim_results_", "", prefix),
+      "_cv_ALL.md"
+    )
+  )
 )

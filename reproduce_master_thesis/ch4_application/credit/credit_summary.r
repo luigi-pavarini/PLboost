@@ -19,33 +19,37 @@
 # Output: summary_credit_VT_cv_ALL.md  (next to the .RData files)
 # ==============================================================================
 
-# ── PER-APP PARAMETERS (only this block differs between apps) ─────────────────
-# --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
+# === PER-APP PARAMETERS (only this block differs between apps) ================
+# === resolucao de caminho relativa a este arquivo (nao depende de outras pastas) ===
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {
     o <- sys.frame(i)$ofile
-    if (!is.null(o)) return(dirname(normalizePath(o)))
+    if (!is.null(o)) {
+      return(dirname(normalizePath(o)))
+    }
   }
-  a  <- commandArgs(trailingOnly = FALSE)
+  a <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
-  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
-  if (length(sp)) return(dirname(normalizePath(sp)))
+  sp <- gsub("~+~", " ", sp, fixed = TRUE) # Rscript writes spaces as ~+~
+  if (length(sp)) {
+    return(dirname(normalizePath(sp)))
+  }
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
-app_name     <- "credit VT"
-prefix       <- "sim_results_credit_VT"                       # load_cv_results prefix
+app_path <- Sys.getenv("PLBOOST_OUT", unset = ".") # set PLBOOST_OUT (must contain data/)
+app_name <- "credit VT"
+prefix <- "sim_results_credit_VT" # load_cv_results prefix
 family_order <- c("NO", "TF", "LO", "PE", "SN", "SLASH", "Hyp", "BEOI")
-K_FOLDS      <- 5
-R_REPEATS    <- 10
-# ─────────────────────────────────────────────────────────────────────────────
+K_FOLDS <- 5
+R_REPEATS <- 10
+# ==============================================================================
 
 results_path <- file.path(app_path, "cross_val", "results")
 source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
 source(file.path(.script_dir(), "..", "essentials", "cv_summary.R"))
 
-TOTAL_ENTRIES <- K_FOLDS * R_REPEATS                         # 50 = error-bar population
+TOTAL_ENTRIES <- K_FOLDS * R_REPEATS # 50 = error-bar population
 
 # Load each family's MERGED results (all batch tags _1/_2/_3). If a family has no files
 # yet, keep an all-NULL slot vector so the table still renders ( "—" / 0/50 ).
@@ -63,16 +67,22 @@ results_containers <- setNames(lapply(family_order, function(fam) {
 # column and footer read out of 50, and SD is over the pooled folds.
 summarise_cv(
   results_containers = results_containers,
-  family_order       = family_order,
-  meta = list(app = app_name, k_folds = K_FOLDS, r_repeats = R_REPEATS,
-              repeat_start = 1, repeat_end = R_REPEATS,
-              batch_entries = TOTAL_ENTRIES, total_entries = TOTAL_ENTRIES,
-              batch_tag = "ALL"),
+  family_order = family_order,
+  meta = list(
+    app = app_name, k_folds = K_FOLDS, r_repeats = R_REPEATS,
+    repeat_start = 1, repeat_end = R_REPEATS,
+    batch_entries = TOTAL_ENTRIES, total_entries = TOTAL_ENTRIES,
+    batch_tag = "ALL"
+  ),
   # file stem matches the run scripts: summary_<stub>_cv_ALL.md (stub = prefix
   # without the leading "sim_results_"): itagrade / credit_VT / soil
-  out_file = file.path(results_path,
-                       paste0("summary_", sub("^sim_results_", "", prefix),
-                              "_cv_ALL.md"))
+  out_file = file.path(
+    results_path,
+    paste0(
+      "summary_", sub("^sim_results_", "", prefix),
+      "_cv_ALL.md"
+    )
+  )
 )
 
 # APL-TF vs BEOI on the folds where both converged (49 of 50)
@@ -80,6 +90,8 @@ both <- which(!sapply(results_containers$TF, is.null) & !sapply(results_containe
 cat("\nAPL-TF vs BEOI on", length(both), "common folds\n")
 for (fam in c("TF", "BEOI")) {
   M <- sapply(results_containers[[fam]][both], cv_metrics)
-  cat(sprintf("  %-5s MSE x 100 %.3f   MAE %.4f   Upsilon %.4f\n",
-              fam, mean(M["mse100", ]), mean(M["mae", ]), mean(M["upsilon", ])))
+  cat(sprintf(
+    "  %-5s MSE x 100 %.3f   MAE %.4f   Upsilon %.4f\n",
+    fam, mean(M["mse100", ]), mean(M["mae", ]), mean(M["upsilon", ])
+  ))
 }

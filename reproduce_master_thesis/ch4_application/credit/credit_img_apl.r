@@ -11,42 +11,46 @@
 # n_entries available — no hardcoded 100.
 # ==============================================================================
 
-fam          <- "TF"   # model reported in the master thesis (APL-t); also NO, LO, PE, SN, SLASH, Hyp
-# --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
+fam <- "TF" # model reported in the master thesis (APL-t); also NO, LO, PE, SN, SLASH, Hyp
+# === resolucao de caminho relativa a este arquivo (nao depende de outras pastas) ===
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {
     o <- sys.frame(i)$ofile
-    if (!is.null(o)) return(dirname(normalizePath(o)))
+    if (!is.null(o)) {
+      return(dirname(normalizePath(o)))
+    }
   }
-  a  <- commandArgs(trailingOnly = FALSE)
+  a <- commandArgs(trailingOnly = FALSE)
   sp <- sub("^--file=", "", a[grep("^--file=", a)])
-  sp <- gsub("~+~", " ", sp, fixed = TRUE)   # Rscript writes spaces as ~+~
-  if (length(sp)) return(dirname(normalizePath(sp)))
+  sp <- gsub("~+~", " ", sp, fixed = TRUE) # Rscript writes spaces as ~+~
+  if (length(sp)) {
+    return(dirname(normalizePath(sp)))
+  }
   getwd()
 }
 
-app_path     <- Sys.getenv("PLBOOST_OUT", unset = ".")   # set PLBOOST_OUT (must contain data/)
+app_path <- Sys.getenv("PLBOOST_OUT", unset = ".") # set PLBOOST_OUT (must contain data/)
 results_path <- file.path(app_path, "cross_val", "results")
-base_path    <- file.path(app_path, "cross_val", "imgs", fam)
+base_path <- file.path(app_path, "cross_val", "imgs", fam)
 if (!dir.exists(base_path)) dir.create(base_path, recursive = TRUE)
 
-# ---- Image export settings --------------------------------------------------
-img_width  <- 2000
+# === Image export settings ====================================================
+img_width <- 2000
 img_height <- 2000
-img_res    <- 330
-rel_dim    <- 1.8
+img_res <- 330
+rel_dim <- 1.8
 
 source(file.path(.script_dir(), "..", "essentials", "cv_load.R"))
 load(file.path(app_path, "data", "df_lgd_all.RData"))
 
-cv          <- load_cv_results(results_path, "sim_results_credit_VT", fam)
+cv <- load_cv_results(results_path, "sim_results_credit_VT", fam)
 sim_results <- cv$sim_results
-var_dict    <- cv$var_dict
+var_dict <- cv$var_dict
 
-# ── FILTER NULL ENTRIES ───────────────────────────────────────────────────────
+# === FILTER NULL ENTRIES ======================================================
 success_idx <- which(!sapply(sim_results, is.null))
 sim_results <- sim_results[success_idx]
-n_success   <- length(sim_results)   # = k * R that succeeded (5 if single pass)
+n_success <- length(sim_results) # = k * R that succeeded (5 if single pass)
 cat("Successful CV entries (folds x repeats):", n_success, "\n")
 
 # ==============================================================================
@@ -63,16 +67,16 @@ all_test_df <- do.call(rbind, lapply(sim_results, function(x) {
   data.frame(idx = x$test_idx, y = x$y_test)
 }))
 all_test_df <- all_test_df[!duplicated(all_test_df$idx), ]
-y_all       <- all_test_df$y
+y_all <- all_test_df$y
 
 # Derived quantities
-errors_apl    <- sapply(sim_results, function(x) x$error_apl) * 100
-mae_apl       <- sapply(sim_results, function(x) x$mae_apl)
-upsilon_vec   <- sapply(sim_results, function(x) x$upsilon)
+errors_apl <- sapply(sim_results, function(x) x$error_apl) * 100
+mae_apl <- sapply(sim_results, function(x) x$mae_apl)
+upsilon_vec <- sapply(sim_results, function(x) x$upsilon)
 zeta_best_vec <- sapply(sim_results, function(x) x$zeta_best)
-all_ytest     <- unlist(lapply(sim_results, function(x) x$y_test))
-all_muhat     <- unlist(lapply(sim_results, function(x) x$mu_hat))
-all_resid     <- all_ytest - all_muhat
+all_ytest <- unlist(lapply(sim_results, function(x) x$y_test))
+all_muhat <- unlist(lapply(sim_results, function(x) x$mu_hat))
+all_resid <- all_ytest - all_muhat
 all_alpha_hat <- unlist(lapply(sim_results, function(x) x$alpha_hat))
 lambda_hat_vec <- sapply(sim_results, function(x) exp(x$coef_lambda["(Intercept)"] + attr(x$coef_lambda, "offset")))
 
@@ -83,17 +87,19 @@ build_coef_mat <- function(coef_list, exclude = "(Intercept)") {
   all_vars <- unique(unlist(lapply(coef_list, function(cv) {
     names(cv)[names(cv) != exclude]
   })))
-  mat <- matrix(0, nrow = length(all_vars), ncol = length(coef_list),
-                dimnames = list(all_vars, NULL))
+  mat <- matrix(0,
+    nrow = length(all_vars), ncol = length(coef_list),
+    dimnames = list(all_vars, NULL)
+  )
   for (r in seq_along(coef_list)) {
-    cv  <- coef_list[[r]]
+    cv <- coef_list[[r]]
     nms <- names(cv)[names(cv) != exclude]
     mat[nms, r] <- cv[nms]
   }
   mat
 }
 
-coef_mu_mat    <- build_coef_mat(lapply(sim_results, function(x) x$coef_mu))
+coef_mu_mat <- build_coef_mat(lapply(sim_results, function(x) x$coef_mu))
 coef_sigma_mat <- build_coef_mat(lapply(sim_results, function(x) x$coef_sigma))
 coef_alpha_mat <- build_coef_mat(lapply(sim_results, function(x) x$coef_alpha))
 
@@ -102,43 +108,54 @@ coef_alpha_mat <- build_coef_mat(lapply(sim_results, function(x) x$coef_alpha))
 # ==============================================================================
 
 png(file.path(base_path, "plot_response_dist.png"),
-    width = img_width, height = img_height, res = img_res)
+  width = img_width, height = img_height, res = img_res
+)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
 
-prop_one  <- mean(y_all == 1)
-dens_obj  <- density(y_all[y_all < 1], bw = "SJ")
-dens_x    <- dens_obj$x[dens_obj$x < 1]
-dens_y    <- dens_obj$y[dens_obj$x < 1]
-pin_x     <- dens_x[which.max(dens_x)]
+prop_one <- mean(y_all == 1)
+dens_obj <- density(y_all[y_all < 1], bw = "SJ")
+dens_x <- dens_obj$x[dens_obj$x < 1]
+dens_y <- dens_obj$y[dens_obj$x < 1]
+pin_x <- dens_x[which.max(dens_x)]
 pin_height <- dens_y[which.max(dens_x)]
 
 # Escala vertical calculada a partir da barra mais alta do histograma.
 # Antes era fixa em c(0, 10), o que cortava a barra da massa em LGD = 1
 # (densidade ~21.7 com breaks = 25), deixando o eixo abaixo da barra.
-h_obj    <- hist(y_all, breaks = 25, plot = FALSE)
-dens_pl  <- dens_y * (1 - prop_one) * (1 / max(dens_obj$x))
+h_obj <- hist(y_all, breaks = 25, plot = FALSE)
+dens_pl <- dens_y * (1 - prop_one) * (1 / max(dens_obj$x))
 ylim_top <- max(c(h_obj$density, dens_pl, pin_height)) * 1.08
 
-hist(y_all, breaks = 25, freq = FALSE,
-     col = "gray85", border = "white",
-     xlab = "Loss Given Default (LGD)",
-     ylab = "Density", main = "", las = 1,
-     ylim = c(0, ylim_top), xlim = c(0, 1))
+hist(y_all,
+  breaks = 25, freq = FALSE,
+  col = "gray85", border = "white",
+  xlab = "Loss Given Default (LGD)",
+  ylab = "Density", main = "", las = 1,
+  ylim = c(0, ylim_top), xlim = c(0, 1)
+)
 lines(dens_x, dens_pl,
-      col = "gray30", lwd = 2)
-segments(x0 = pin_x, x1 = pin_x, y0 = 0, y1 = pin_height,
-         col = "gray30", lwd = 2)
-points(x = pin_x, y = pin_height, pch = 21,
-       col = "gray30", bg = "gray30", cex = 1.6)
+  col = "gray30", lwd = 2
+)
+segments(
+  x0 = pin_x, x1 = pin_x, y0 = 0, y1 = pin_height,
+  col = "gray30", lwd = 2
+)
+points(
+  x = pin_x, y = pin_height, pch = 21,
+  col = "gray30", bg = "gray30", cex = 1.6
+)
 abline(v = mean(y_all), lty = 3, col = "gray40", lwd = 1.5)
 legend("topleft",
-       legend = c("Kernel density (lgd < 1)",
-                  paste0("lgd = 1 mass: ", round(prop_one * 100, 1), "%"),
-                  "Mean"),
-       col = c("gray30", "gray30", "gray40"),
-       lty = c(1, NA, 3), lwd = c(2, NA, 1.5),
-       pch = c(NA, 21, NA), pt.bg = c(NA, "gray30", NA), pt.cex = 1.3,
-       bty = "n", cex = 0.85)
+  legend = c(
+    "Kernel density (lgd < 1)",
+    paste0("lgd = 1 mass: ", round(prop_one * 100, 1), "%"),
+    "Mean"
+  ),
+  col = c("gray30", "gray30", "gray40"),
+  lty = c(1, NA, 3), lwd = c(2, NA, 1.5),
+  pch = c(NA, 21, NA), pt.bg = c(NA, "gray30", NA), pt.cex = 1.3,
+  bty = "n", cex = 0.85
+)
 par(old_par)
 dev.off()
 
@@ -147,17 +164,23 @@ dev.off()
 # ==============================================================================
 
 png(file.path(base_path, "plot_mse_dist.png"),
-    width = img_width, height = img_height, res = img_res)
+  width = img_width, height = img_height, res = img_res
+)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(errors_apl, ylab = expression("MSE" %*% 100),
-        xaxt = "n", col = "gray85", border = "gray30",
-        las = 1, outline = TRUE, main = "")
+boxplot(errors_apl,
+  ylab = expression("MSE" %*% 100),
+  xaxt = "n", col = "gray85", border = "gray30",
+  las = 1, outline = TRUE, main = ""
+)
 axis(1, at = 1, labels = "APL")
 abline(h = mean(errors_apl), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(errors_apl), 3),
-                       "   SD = ", round(sd(errors_apl), 3)),
-       bty = "n", cex = 0.85)
+  legend = paste0(
+    "Mean = ", round(mean(errors_apl), 3),
+    "   SD = ", round(sd(errors_apl), 3)
+  ),
+  bty = "n", cex = 0.85
+)
 par(old_par)
 dev.off()
 
@@ -166,17 +189,23 @@ dev.off()
 # ==============================================================================
 
 png(file.path(base_path, "plot_mae_dist.png"),
-    width = img_width, height = img_height, res = img_res)
+  width = img_width, height = img_height, res = img_res
+)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(mae_apl, ylab = "MAE",
-        xaxt = "n", col = "gray85", border = "gray30",
-        las = 1, outline = TRUE, main = "")
+boxplot(mae_apl,
+  ylab = "MAE",
+  xaxt = "n", col = "gray85", border = "gray30",
+  las = 1, outline = TRUE, main = ""
+)
 axis(1, at = 1, labels = "APL")
 abline(h = mean(mae_apl), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(mae_apl), 4),
-                       "   SD = ", round(sd(mae_apl), 4)),
-       bty = "n", cex = 0.85)
+  legend = paste0(
+    "Mean = ", round(mean(mae_apl), 4),
+    "   SD = ", round(sd(mae_apl), 4)
+  ),
+  bty = "n", cex = 0.85
+)
 par(old_par)
 dev.off()
 
@@ -185,17 +214,23 @@ dev.off()
 # ==============================================================================
 
 png(file.path(base_path, "plot_upsilon_dist.png"),
-    width = img_width, height = img_height, res = img_res)
+  width = img_width, height = img_height, res = img_res
+)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-boxplot(upsilon_vec, ylab = expression(Upsilon),
-        xaxt = "n", col = "gray85", border = "gray30",
-        las = 1, outline = TRUE, main = "")
+boxplot(upsilon_vec,
+  ylab = expression(Upsilon),
+  xaxt = "n", col = "gray85", border = "gray30",
+  las = 1, outline = TRUE, main = ""
+)
 axis(1, at = 1, labels = "APL")
 abline(h = mean(upsilon_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(upsilon_vec), 4),
-                       "   SD = ", round(sd(upsilon_vec), 4)),
-       bty = "n", cex = 0.85)
+  legend = paste0(
+    "Mean = ", round(mean(upsilon_vec), 4),
+    "   SD = ", round(sd(upsilon_vec), 4)
+  ),
+  bty = "n", cex = 0.85
+)
 par(old_par)
 dev.off()
 
@@ -205,27 +240,32 @@ dev.off()
 
 if (has_zeta) {
   png(file.path(base_path, "plot_zeta_selection.png"),
-      width = img_width, height = img_height, res = img_res)
+    width = img_width, height = img_height, res = img_res
+  )
   old_par <- par(mar = c(4.5, 4.5, 2, 2))
   zeta_tab <- table(unlist(zeta_best_vec))
   # Sem ylim explícito, barplot() para as marcas no último valor "bonito"
   # abaixo do máximo, deixando o eixo vertical abaixo do topo da barra.
   # Fixa o topo no próximo múltiplo de 10 acima da barra mais alta.
-  ytop_z   <- max(10 * ceiling(max(zeta_tab) / 10), n_success)
-  ticks_z  <- seq(0, ytop_z, by = 10)
+  ytop_z <- max(10 * ceiling(max(zeta_tab) / 10), n_success)
+  ticks_z <- seq(0, ytop_z, by = 10)
   barplot(zeta_tab,
-          xlab = expression(zeta),
-          ylab = "Number of CV entries",
-          col = "gray85", border = "gray30",
-          las = 1, main = "",
-          ylim = c(0, ytop_z), yaxt = "n")
+    xlab = expression(zeta),
+    ylab = "Number of CV entries",
+    col = "gray85", border = "gray30",
+    las = 1, main = "",
+    ylim = c(0, ytop_z), yaxt = "n"
+  )
   axis(2, at = ticks_z, las = 1)
   abline(h = 0, col = "gray60")
   legend("topright",
-         legend = paste0("Most selected: zeta = ",
-                         names(zeta_tab)[which.max(zeta_tab)],
-                         "  (", max(zeta_tab), "/", n_success, ")"),
-         bty = "n", cex = 0.85)
+    legend = paste0(
+      "Most selected: zeta = ",
+      names(zeta_tab)[which.max(zeta_tab)],
+      "  (", max(zeta_tab), "/", n_success, ")"
+    ),
+    bty = "n", cex = 0.85
+  )
   par(old_par)
   dev.off()
 } else {
@@ -237,20 +277,26 @@ if (has_zeta) {
 # ==============================================================================
 
 png(file.path(base_path, "plot_lambda_boxplot.png"),
-    width = img_width, height = img_height, res = img_res)
+  width = img_width, height = img_height, res = img_res
+)
 old_par <- par(mar = c(4.5, 4.5, 2, 2))
-lam_r <- range(lambda_hat_vec); lam_pad <- 0.6 * diff(lam_r) + 0.05
+lam_r <- range(lambda_hat_vec)
+lam_pad <- 0.6 * diff(lam_r) + 0.05
 boxplot(lambda_hat_vec,
-        ylab = expression("Estimated  " * hat(lambda)),
-        xaxt = "n", col = "gray85", border = "gray30",
-        las = 1, outline = TRUE, main = "",
-        ylim = c(lam_r[1] - lam_pad, lam_r[2] + lam_pad))
+  ylab = expression("Estimated  " * hat(lambda)),
+  xaxt = "n", col = "gray85", border = "gray30",
+  las = 1, outline = TRUE, main = "",
+  ylim = c(lam_r[1] - lam_pad, lam_r[2] + lam_pad)
+)
 axis(1, at = 1, labels = "APL")
 abline(h = mean(lambda_hat_vec), lty = 2, col = "red4", lwd = 1.5)
 legend("topright",
-       legend = paste0("Mean = ", round(mean(lambda_hat_vec), 3),
-                       "   SD = ", round(sd(lambda_hat_vec), 3)),
-       bty = "n", cex = 0.85)
+  legend = paste0(
+    "Mean = ", round(mean(lambda_hat_vec), 3),
+    "   SD = ", round(sd(lambda_hat_vec), 3)
+  ),
+  bty = "n", cex = 0.85
+)
 par(old_par)
 dev.off()
 
@@ -261,17 +307,20 @@ dev.off()
 plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
                              min_freq = 0.10, filename,
                              legend_pos = "bottomright") {
-  avg  <- rowMeans(coef_mat)
+  avg <- rowMeans(coef_mat)
   sdev <- apply(coef_mat, 1, sd)
   freq <- rowMeans(coef_mat != 0)
   keep <- freq >= min_freq
-  avg  <- avg[keep];  sdev <- sdev[keep]
+  avg <- avg[keep]
+  sdev <- sdev[keep]
   top10 <- order(abs(avg), decreasing = TRUE)[seq_len(min(10, length(avg)))]
-  avg   <- avg[top10];  sdev <- sdev[top10]
-  ord  <- order(abs(avg), decreasing = FALSE)
-  avg  <- avg[ord];   sdev <- sdev[ord]
+  avg <- avg[top10]
+  sdev <- sdev[top10]
+  ord <- order(abs(avg), decreasing = FALSE)
+  avg <- avg[ord]
+  sdev <- sdev[ord]
   orig <- map_names(names(avg), var_dict)
-  n    <- length(avg)
+  n <- length(avg)
 
   ci68_lo <- avg - 1.000 * sdev
   ci68_hi <- avg + 1.000 * sdev
@@ -286,55 +335,74 @@ plot_coef_forest <- function(coef_mat, var_dict, param_label = "mu",
     alpha = expression("Average coefficient  " * eta[alpha])
   )
 
-  rect_half  <- 0.30
-  col_pos    <- adjustcolor("#4682B4", alpha.f = 0.45)
-  col_neg    <- adjustcolor("#B44646", alpha.f = 0.45)
+  rect_half <- 0.30
+  col_pos <- adjustcolor("#4682B4", alpha.f = 0.45)
+  col_neg <- adjustcolor("#B44646", alpha.f = 0.45)
   col_pos_90 <- adjustcolor("#4682B4", alpha.f = 0.80)
   col_neg_90 <- adjustcolor("#B44646", alpha.f = 0.80)
-  col_bord   <- "#2a2a2a"
-  x_range    <- range(c(ci95_lo, ci95_hi, 0)) * 1.15
+  col_bord <- "#2a2a2a"
+  x_range <- range(c(ci95_lo, ci95_hi, 0)) * 1.15
   x_range[1] <- min(x_range[1], -0.01)
 
-  png(filename, width = img_width * rel_dim,
-      height = max(img_height, 55 * n + 150), res = img_res)
+  png(filename,
+    width = img_width * rel_dim,
+    height = max(img_height, 55 * n + 150), res = img_res
+  )
   old_par <- par(cex.axis = 1.5, cex.lab = 1.7)
   par(mar = c(5, max(strwidth(orig, "inches", cex = 1.4)) / par("csi") + 1.2, 0.5, 1))
-  plot(NA, xlim = x_range, ylim = c(0.5, n + 0.5),
-       yaxt = "n", xlab = xlab_expr, ylab = "", main = "", las = 1)
+  plot(NA,
+    xlim = x_range, ylim = c(0.5, n + 0.5),
+    yaxt = "n", xlab = xlab_expr, ylab = "", main = "", las = 1
+  )
   abline(v = 0, col = "gray60", lty = 2)
-  rect_col    <- ifelse(avg >= 0, col_pos,    col_neg)
+  rect_col <- ifelse(avg >= 0, col_pos, col_neg)
   wick_col_90 <- ifelse(avg >= 0, col_pos_90, col_neg_90)
-  cap_95      <- rect_half * 0.75
-  segments(x0 = ci95_lo, x1 = ci95_hi,
-           y0 = seq_len(n), y1 = seq_len(n),
-           col = col_bord, lwd = 1.4, lty = 3)
-  segments(x0 = ci95_lo, x1 = ci95_lo,
-           y0 = seq_len(n) - cap_95, y1 = seq_len(n) + cap_95,
-           col = col_bord, lwd = 1.4, lty = 3)
-  segments(x0 = ci95_hi, x1 = ci95_hi,
-           y0 = seq_len(n) - cap_95, y1 = seq_len(n) + cap_95,
-           col = col_bord, lwd = 1.4, lty = 3)
-  segments(x0 = ci90_lo, x1 = ci90_hi,
-           y0 = seq_len(n), y1 = seq_len(n),
-           col = wick_col_90, lwd = 1.4, lty = 1)
-  rect(xleft   = ci68_lo, ybottom = seq_len(n) - rect_half,
-       xright  = ci68_hi, ytop    = seq_len(n) + rect_half,
-       col = rect_col, border = col_bord, lwd = 0.6)
-  points(avg, seq_len(n), pch = 22, col = col_bord,
-         bg = "white", cex = 1.3, lwd = 1.2)
+  cap_95 <- rect_half * 0.75
+  segments(
+    x0 = ci95_lo, x1 = ci95_hi,
+    y0 = seq_len(n), y1 = seq_len(n),
+    col = col_bord, lwd = 1.4, lty = 3
+  )
+  segments(
+    x0 = ci95_lo, x1 = ci95_lo,
+    y0 = seq_len(n) - cap_95, y1 = seq_len(n) + cap_95,
+    col = col_bord, lwd = 1.4, lty = 3
+  )
+  segments(
+    x0 = ci95_hi, x1 = ci95_hi,
+    y0 = seq_len(n) - cap_95, y1 = seq_len(n) + cap_95,
+    col = col_bord, lwd = 1.4, lty = 3
+  )
+  segments(
+    x0 = ci90_lo, x1 = ci90_hi,
+    y0 = seq_len(n), y1 = seq_len(n),
+    col = wick_col_90, lwd = 1.4, lty = 1
+  )
+  rect(
+    xleft = ci68_lo, ybottom = seq_len(n) - rect_half,
+    xright = ci68_hi, ytop = seq_len(n) + rect_half,
+    col = rect_col, border = col_bord, lwd = 0.6
+  )
+  points(avg, seq_len(n),
+    pch = 22, col = col_bord,
+    bg = "white", cex = 1.3, lwd = 1.2
+  )
   axis(2, at = seq_len(n), labels = orig, las = 1, cex.axis = 1.4)
   legend(legend_pos,
-         legend = c("\u00b11 SD body (positive)", "\u00b11 SD body (negative)",
-                    "\u00b11.645 SD solid (positive)", "\u00b11.645 SD solid (negative)",
-                    "\u00b11.960 SD dotted T", "Mean"),
-         fill   = c(col_pos, col_neg, NA, NA, NA, NA),
-         border = c(col_bord, col_bord, NA, NA, NA, NA),
-         lty    = c(NA, NA, 1, 1, 3, NA),
-         lwd    = c(NA, NA, 1.4, 1.4, 1.4, NA),
-         col    = c(NA, NA, col_pos_90, col_neg_90, col_bord, col_bord),
-         pch    = c(NA, NA, NA, NA, NA, 22),
-         pt.bg  = c(NA, NA, NA, NA, NA, "white"),
-         pt.cex = 1.3, bty = "n", cex = 1.1)
+    legend = c(
+      "\u00b11 SD body (positive)", "\u00b11 SD body (negative)",
+      "\u00b11.645 SD solid (positive)", "\u00b11.645 SD solid (negative)",
+      "\u00b11.960 SD dotted T", "Mean"
+    ),
+    fill = c(col_pos, col_neg, NA, NA, NA, NA),
+    border = c(col_bord, col_bord, NA, NA, NA, NA),
+    lty = c(NA, NA, 1, 1, 3, NA),
+    lwd = c(NA, NA, 1.4, 1.4, 1.4, NA),
+    col = c(NA, NA, col_pos_90, col_neg_90, col_bord, col_bord),
+    pch = c(NA, NA, NA, NA, NA, 22),
+    pt.bg = c(NA, NA, NA, NA, NA, "white"),
+    pt.cex = 1.3, bty = "n", cex = 1.1
+  )
   par(old_par)
   dev.off()
 }
@@ -349,20 +417,20 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   # (Previously this normalized each fold's selections to sum to 1, giving a share of
   #  the selection budget rather than a selection frequency, which contradicted the
   #  tables where e.g. term_36_months = 1.00.)
-  M          <- ncol(coef_mat)
-  avg_prop   <- rowMeans(coef_mat != 0)
-  sd_prop    <- sqrt(avg_prop * (1 - avg_prop) / M)   # binomial standard error
-  top_n_use  <- min(top_n, length(avg_prop))
-  ord        <- order(avg_prop, decreasing = TRUE)[seq_len(top_n_use)]
-  top_avg    <- avg_prop[ord]
-  top_sd     <- sd_prop[ord]
-  top_names  <- map_names(names(top_avg), var_dict)
+  M <- ncol(coef_mat)
+  avg_prop <- rowMeans(coef_mat != 0)
+  sd_prop <- sqrt(avg_prop * (1 - avg_prop) / M) # binomial standard error
+  top_n_use <- min(top_n, length(avg_prop))
+  ord <- order(avg_prop, decreasing = TRUE)[seq_len(top_n_use)]
+  top_avg <- avg_prop[ord]
+  top_sd <- sd_prop[ord]
+  top_names <- map_names(names(top_avg), var_dict)
   others_avg <- mean(avg_prop[-ord])
-  others_sd  <- sd(avg_prop[-ord])
-  p_plot     <- c(top_avg, others_avg)
-  sd_plot    <- c(top_sd,  others_sd)
-  lbl_plot   <- c(top_names, "others")
-  n_plot     <- length(p_plot)
+  others_sd <- sd(avg_prop[-ord])
+  p_plot <- c(top_avg, others_avg)
+  sd_plot <- c(top_sd, others_sd)
+  lbl_plot <- c(top_names, "others")
+  n_plot <- length(p_plot)
 
   xlab_expr <- switch(param_label,
     mu    = expression("Proportion of folds selected" ~ eta[mu]),
@@ -373,50 +441,68 @@ lollipop_sel_app <- function(coef_mat, var_dict, top_n = 15,
   png(filename, width = img_width * rel_dim, height = img_height, res = img_res)
   old_par <- par(cex.axis = 1.5, cex.lab = 1.7)
   par(mar = c(5, max(strwidth(lbl_plot, "inches", cex = 1.44)) / par("csi") + 1.2, 0.5, 1))
-  x_max   <- max(p_plot + sd_mult * sd_plot, na.rm = TRUE) * 1.15
+  x_max <- max(p_plot + sd_mult * sd_plot, na.rm = TRUE) * 1.15
   plot(p_plot, seq_len(n_plot),
-       ylim = c(n_plot, 1), xlim = c(0, x_max),
-       yaxt = "n", xlab = xlab_expr, ylab = "", main = "",
-       pch = 19, col = "gray30", cex = 1.3)
-  segments(x0 = 0, x1 = p_plot,
-           y0 = seq_len(n_plot), y1 = seq_len(n_plot),
-           col = "gray80", lwd = 0.8, lty = 2)
+    ylim = c(n_plot, 1), xlim = c(0, x_max),
+    yaxt = "n", xlab = xlab_expr, ylab = "", main = "",
+    pch = 19, col = "gray30", cex = 1.3
+  )
+  segments(
+    x0 = 0, x1 = p_plot,
+    y0 = seq_len(n_plot), y1 = seq_len(n_plot),
+    col = "gray80", lwd = 0.8, lty = 2
+  )
   x_lo <- pmax(p_plot - sd_mult * sd_plot, 0)
   x_hi <- p_plot + sd_mult * sd_plot
-  cap  <- 0.18
-  segments(x0 = x_lo, x1 = x_hi,
-           y0 = seq_len(n_plot), y1 = seq_len(n_plot),
-           col = "#4682B4", lwd = 1.4)
-  segments(x0 = x_lo, x1 = x_lo,
-           y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
-           col = "#4682B4", lwd = 1.4)
-  segments(x0 = x_hi, x1 = x_hi,
-           y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
-           col = "#4682B4", lwd = 1.4)
+  cap <- 0.18
+  segments(
+    x0 = x_lo, x1 = x_hi,
+    y0 = seq_len(n_plot), y1 = seq_len(n_plot),
+    col = "#4682B4", lwd = 1.4
+  )
+  segments(
+    x0 = x_lo, x1 = x_lo,
+    y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
+    col = "#4682B4", lwd = 1.4
+  )
+  segments(
+    x0 = x_hi, x1 = x_hi,
+    y0 = seq_len(n_plot) - cap, y1 = seq_len(n_plot) + cap,
+    col = "#4682B4", lwd = 1.4
+  )
   axis(2, at = seq_len(n_plot), labels = lbl_plot, las = 1, cex.axis = 1.44)
   abline(v = 0, col = "gray60", lty = 2)
   par(old_par)
   dev.off()
 }
 
-# ---- mu ---------------------------------------------------------------------
+# === mu =======================================================================
 plot_coef_forest(coef_mu_mat, var_dict, "mu",
-                 filename = file.path(base_path, "plot_coef_mu.png"),
-                 legend_pos = "bottomright")
-lollipop_sel_app(coef_mu_mat, var_dict, top_n = 15, param_label = "mu",
-                 filename = file.path(base_path, "plot_sel_mu.png"))
+  filename = file.path(base_path, "plot_coef_mu.png"),
+  legend_pos = "bottomright"
+)
+lollipop_sel_app(coef_mu_mat, var_dict,
+  top_n = 15, param_label = "mu",
+  filename = file.path(base_path, "plot_sel_mu.png")
+)
 
-# ---- sigma ------------------------------------------------------------------
+# === sigma ====================================================================
 plot_coef_forest(coef_sigma_mat, var_dict, "sigma",
-                 filename = file.path(base_path, "plot_coef_sigma.png"))
-lollipop_sel_app(coef_sigma_mat, var_dict, top_n = 15, param_label = "sigma",
-                 filename = file.path(base_path, "plot_sel_sigma.png"))
+  filename = file.path(base_path, "plot_coef_sigma.png")
+)
+lollipop_sel_app(coef_sigma_mat, var_dict,
+  top_n = 15, param_label = "sigma",
+  filename = file.path(base_path, "plot_sel_sigma.png")
+)
 
-# ---- alpha ------------------------------------------------------------------
+# === alpha ====================================================================
 plot_coef_forest(coef_alpha_mat, var_dict, "alpha",
-                 filename = file.path(base_path, "plot_coef_alpha.png"))
-lollipop_sel_app(coef_alpha_mat, var_dict, top_n = 15, param_label = "alpha",
-                 filename = file.path(base_path, "plot_sel_alpha.png"))
+  filename = file.path(base_path, "plot_coef_alpha.png")
+)
+lollipop_sel_app(coef_alpha_mat, var_dict,
+  top_n = 15, param_label = "alpha",
+  filename = file.path(base_path, "plot_sel_alpha.png")
+)
 
 # ==============================================================================
 # PRINTED SUMMARY
@@ -431,8 +517,10 @@ cat("--- Dataset (Vermont only) ---\n")
 n_full <- length(y_all)
 cat("  n (total observations) :", n_full, "\n")
 cat("  p (predictors)         :", nrow(var_dict), "\n")
-cat("  lgd range              : [", round(min(y_all), 4), ",",
-    round(max(y_all), 4), "]\n")
+cat(
+  "  lgd range              : [", round(min(y_all), 4), ",",
+  round(max(y_all), 4), "]\n"
+)
 cat("  lgd mean               :", round(mean(y_all), 4), "\n")
 cat("  lgd median             :", round(median(y_all), 4), "\n")
 cat("  lgd SD                 :", round(sd(y_all), 4), "\n")
@@ -474,56 +562,66 @@ cat("--- Lambda estimates across CV entries ---\n")
 cat("  Mean lambda            :", round(mean(lambda_hat_vec), 4), "\n")
 cat("  Median lambda          :", round(median(lambda_hat_vec), 4), "\n")
 cat("  SD   lambda            :", round(sd(lambda_hat_vec), 4), "\n")
-cat("  Range lambda           : [", round(min(lambda_hat_vec), 4), ",",
-    round(max(lambda_hat_vec), 4), "]\n\n")
+cat(
+  "  Range lambda           : [", round(min(lambda_hat_vec), 4), ",",
+  round(max(lambda_hat_vec), 4), "]\n\n"
+)
 
 cat("--- Predicted alpha (test set, all CV entries) ---\n")
 cat("  Mean alpha_hat         :", round(mean(all_alpha_hat), 4), "\n")
 cat("  Median alpha_hat       :", round(median(all_alpha_hat), 4), "\n")
 cat("  SD   alpha_hat         :", round(sd(all_alpha_hat), 4), "\n")
-cat("  Range alpha_hat        : [", round(min(all_alpha_hat), 4), ",",
-    round(max(all_alpha_hat), 4), "]\n\n")
+cat(
+  "  Range alpha_hat        : [", round(min(all_alpha_hat), 4), ",",
+  round(max(all_alpha_hat), 4), "]\n\n"
+)
 
 cat("--- Top selected variables for eta_mu (>= 10% of reps) ---\n")
-avg_mu  <- rowMeans(coef_mu_mat)
+avg_mu <- rowMeans(coef_mu_mat)
 freq_mu <- rowMeans(coef_mu_mat != 0)
-top_mu  <- sort(freq_mu[freq_mu >= 0.10], decreasing = TRUE)
+top_mu <- sort(freq_mu[freq_mu >= 0.10], decreasing = TRUE)
 top_mu_names <- map_names(names(top_mu), var_dict)
 for (i in seq_along(top_mu)) {
   avg_i <- avg_mu[names(top_mu)[i]]
-  sd_i  <- sd(coef_mu_mat[names(top_mu)[i], ])
+  sd_i <- sd(coef_mu_mat[names(top_mu)[i], ])
   ci_lo <- avg_i - 1.96 * sd_i
   ci_hi <- avg_i + 1.96 * sd_i
-  cat(sprintf("  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
-              top_mu_names[i], top_mu[i], avg_i, ci_lo, ci_hi))
+  cat(sprintf(
+    "  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
+    top_mu_names[i], top_mu[i], avg_i, ci_lo, ci_hi
+  ))
 }
 
 cat("\n--- Top selected variables for eta_sigma (>= 10% of reps) ---\n")
-avg_sigma  <- rowMeans(coef_sigma_mat)
+avg_sigma <- rowMeans(coef_sigma_mat)
 freq_sigma <- rowMeans(coef_sigma_mat != 0)
-top_sigma  <- sort(freq_sigma[freq_sigma >= 0.10], decreasing = TRUE)
+top_sigma <- sort(freq_sigma[freq_sigma >= 0.10], decreasing = TRUE)
 top_sigma_names <- map_names(names(top_sigma), var_dict)
 for (i in seq_along(top_sigma)) {
   avg_i <- avg_sigma[names(top_sigma)[i]]
-  sd_i  <- sd(coef_sigma_mat[names(top_sigma)[i], ])
+  sd_i <- sd(coef_sigma_mat[names(top_sigma)[i], ])
   ci_lo <- avg_i - 1.96 * sd_i
   ci_hi <- avg_i + 1.96 * sd_i
-  cat(sprintf("  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
-              top_sigma_names[i], top_sigma[i], avg_i, ci_lo, ci_hi))
+  cat(sprintf(
+    "  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
+    top_sigma_names[i], top_sigma[i], avg_i, ci_lo, ci_hi
+  ))
 }
 
 cat("\n--- Top selected variables for eta_alpha (>= 10% of reps) ---\n")
-avg_alpha  <- rowMeans(coef_alpha_mat)
+avg_alpha <- rowMeans(coef_alpha_mat)
 freq_alpha <- rowMeans(coef_alpha_mat != 0)
-top_alpha  <- sort(freq_alpha[freq_alpha >= 0.10], decreasing = TRUE)
+top_alpha <- sort(freq_alpha[freq_alpha >= 0.10], decreasing = TRUE)
 top_alpha_names <- map_names(names(top_alpha), var_dict)
 for (i in seq_along(top_alpha)) {
   avg_i <- avg_alpha[names(top_alpha)[i]]
-  sd_i  <- sd(coef_alpha_mat[names(top_alpha)[i], ])
+  sd_i <- sd(coef_alpha_mat[names(top_alpha)[i], ])
   ci_lo <- avg_i - 1.96 * sd_i
   ci_hi <- avg_i + 1.96 * sd_i
-  cat(sprintf("  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
-              top_alpha_names[i], top_alpha[i], avg_i, ci_lo, ci_hi))
+  cat(sprintf(
+    "  %-40s  freq = %.2f  avg = %+.3f  95%% CI [%+.3f, %+.3f]\n",
+    top_alpha_names[i], top_alpha[i], avg_i, ci_lo, ci_hi
+  ))
 }
 
 cat("\n================================================================\n")

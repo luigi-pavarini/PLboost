@@ -30,10 +30,13 @@ if (exists("coef_alpha_mat")) mats$alpha <- coef_alpha_mat
 tab <- do.call(rbind, lapply(names(mats), function(k) {
   m <- mats[[k]]
   m <- m[!grepl("Intercept", rownames(m)), , drop = FALSE]
-  avg <- rowMeans(m); s <- apply(m, 1, sd)
-  data.frame(submodel = k, variable = map_names(rownames(m), var_dict),
-             freq = rowMeans(m != 0), avg = avg,
-             lower = avg - 1.96 * s, upper = avg + 1.96 * s)
+  avg <- rowMeans(m)
+  s <- apply(m, 1, sd)
+  data.frame(
+    submodel = k, variable = map_names(rownames(m), var_dict),
+    freq = rowMeans(m != 0), avg = avg,
+    lower = avg - 1.96 * s, upper = avg + 1.96 * s
+  )
 }))
 tab <- tab[tab$freq > 0, ]
 tab <- tab[order(match(tab$submodel, names(mats)), -tab$freq, -abs(tab$avg)), ]
@@ -43,10 +46,13 @@ dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 write.csv(tab, file.path(out_dir, "selection_table.csv"), row.names = FALSE)
 
 num <- function(x) ifelse(x < 0, sprintf("$-$%.3f", abs(x)), sprintf("%.3f", x))
-tex <- sprintf("  %s & \\texttt{%s} & %.2f & %s & %s & %s \\\\",
-               ifelse(duplicated(tab$submodel), "",
-                      sprintf("$\\eta_\\%s$", tab$submodel)),
-               gsub("_", "\\\\_", tab$variable), tab$freq,
-               num(tab$avg), num(tab$lower), num(tab$upper))
+tex <- sprintf(
+  "  %s & \\texttt{%s} & %.2f & %s & %s & %s \\\\",
+  ifelse(duplicated(tab$submodel), "",
+    sprintf("$\\eta_\\%s$", tab$submodel)
+  ),
+  gsub("_", "\\\\_", tab$variable), tab$freq,
+  num(tab$avg), num(tab$lower), num(tab$upper)
+)
 writeLines(tex, file.path(out_dir, "selection_table.tex"))
 cat("Wrote", nrow(tab), "rows to", out_dir, "\n")

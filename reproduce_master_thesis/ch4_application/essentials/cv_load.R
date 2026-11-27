@@ -12,16 +12,20 @@
 #                 plotting code expects; downstream filters NULLs as before.
 # ==============================================================================
 load_cv_results <- function(results_path, prefix, fam) {
-  pat   <- paste0("^", prefix, "_cv_", fam, "_.*\\.RData$")
+  pat <- paste0("^", prefix, "_cv_", fam, "_.*\\.RData$")
   files <- sort(list.files(results_path, pattern = pat, full.names = TRUE))
-  if (length(files) == 0)
-    stop("No CV result files for '", fam, "' in ", results_path,
-         "  (pattern: ", pat, ")")
+  if (length(files) == 0) {
+    stop(
+      "No CV result files for '", fam, "' in ", results_path,
+      "  (pattern: ", pat, ")"
+    )
+  }
 
   combined <- NULL
   var_dict <- NULL
   for (f in files) {
-    e <- new.env(); load(f, envir = e)
+    e <- new.env()
+    load(f, envir = e)
     sr <- e$sim_results
     if (is.null(var_dict)) var_dict <- e$var_dict
     if (is.null(combined)) {
@@ -34,8 +38,12 @@ load_cv_results <- function(results_path, prefix, fam) {
   }
 
   n_entries <- sum(!vapply(combined, is.null, logical(1)))
-  cat("Loaded", length(files), "file(s) for", fam,
-      "->", n_entries, "non-null CV entries (folds x repeats)\n")
-  list(sim_results = combined, var_dict = var_dict,
-       n_entries = n_entries, n_files = length(files))
+  cat(
+    "Loaded", length(files), "file(s) for", fam,
+    "->", n_entries, "non-null CV entries (folds x repeats)\n"
+  )
+  list(
+    sim_results = combined, var_dict = var_dict,
+    n_entries = n_entries, n_files = length(files)
+  )
 }
