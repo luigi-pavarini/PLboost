@@ -10,7 +10,7 @@ estimated jointly by component-wise gradient boosting. Variable selection and
 regularization come out of the fitting procedure itself, which makes the approach usable
 when the number of candidate covariates exceeds the number of observations.
 
-It accompanies the MSc dissertation *Boosting-based Inference and Variable Selection for
+It accompanies the master thesis *Boosting-based Inference and Variable Selection for
 Modeling Bounded Continuous Data* (IME-USP). The power logit class is due to
 Queiroz and Ferrari (2024), and the extension with a point mass at a boundary to
 Queiroz and Ferrari (2024b), who call it the inflated power logit. Here it is called
@@ -94,24 +94,24 @@ median fixed at the sample median and the dispersion at a diffuse starting value
 `gamboostLSS:::stabilize_ngradient`, both internal to their packages. This is why PLboost
 is distributed on GitHub rather than CRAN.
 
-## Reproducing the dissertation
+## Reproducing the master thesis
 
-The [`reproduce/`](reproduce) directory holds the scripts behind every table and figure
-of the dissertation, and is not part of the installed package.
+The [`reproduce_master_thesis/`](reproduce_master_thesis) directory holds the scripts behind every table and figure
+of the master thesis, and is not part of the installed package.
 
 | Directory | What it produces |
 |---|---|
 | `ch3_validation/` | boosting against `PLreg`/`IPLreg` maximum likelihood over 100 Monte Carlo replications per scenario (Sections 3.1 and 3.2): `validation_multirep.R` writes `validation_results.csv` and `validation_replications.csv`, `make_tables.py` turns the first into Tables 3.1 (PL) and 3.2 (APL), and `appendixA_boxplots.R` draws Figures A.1 to A.5 from the second. Seeded, so a rerun gives the published numbers |
 | `ch3_simulation/` | the high-dimensional Monte Carlo study, `n = 800` with 1000 candidate covariates per submodel: `simulation_PL.R` (run once per generator, set `fam`) and `simulation_APL.R` store the results; the scripts in `figures/` draw every figure of Chapter 3 from them |
-| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, adjusted PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce/ch4_application/DATA.md) |
+| `ch4_application/` | two applications, each under 50-fold cross-validation (5-fold repeated 10 times): `credit/` (loss given default, adjusted PL) and `inep/` (Conceito Enade course quality, plain PL); `essentials/selection_table.R` rebuilds the selection tables. See [`DATA.md`](reproduce_master_thesis/ch4_application/DATA.md) |
 
 Scripts write their output to the directory given by the `PLBOOST_OUT` environment
 variable, defaulting to the working directory:
 
 ```bash
-PLBOOST_OUT=~/plboost-output Rscript reproduce/ch3_validation/validation_multirep.R
-PLBOOST_OUT=~/plboost-output python3 reproduce/ch3_validation/make_tables.py
-PLBOOST_OUT=~/plboost-output Rscript reproduce/ch3_validation/appendixA_boxplots.R
+PLBOOST_OUT=~/plboost-output Rscript reproduce_master_thesis/ch3_validation/validation_multirep.R
+PLBOOST_OUT=~/plboost-output python3 reproduce_master_thesis/ch3_validation/make_tables.py
+PLBOOST_OUT=~/plboost-output Rscript reproduce_master_thesis/ch3_validation/appendixA_boxplots.R
 ```
 
 The Chapter 3 simulations are not seeded: a rerun gives statistically equivalent
@@ -119,16 +119,19 @@ results, not the same digits. The figure scripts reproduce the published figures
 from the stored `.RData` results.
 
 The credit data is not redistributed here; see
-[`reproduce/ch4_application/DATA.md`](reproduce/ch4_application/DATA.md).
+[`reproduce_master_thesis/ch4_application/DATA.md`](reproduce_master_thesis/ch4_application/DATA.md).
 
 ## Residual diagnostics (experimental)
 
 [`inst/diagnostics/`](inst/diagnostics) holds quantile residuals with simulated envelopes
-for PL and APL fits, by boosting and by maximum likelihood. It is not part of the
-dissertation and is not exported; `example_residuals.R` shows how to use it:
+for PL and APL fits, by boosting and by maximum likelihood (`residuals_boosting.R`,
+function `envelope_PLboost`), and a worm plot of the quantile residuals
+(`wp_PLboost.R`, function `plot_worm`). It is not part of the master thesis and is not
+exported; `example_residuals.R` shows how to use it:
 
 ```r
 source(system.file("diagnostics", "residuals_boosting.R", package = "PLboost"))
+source(system.file("diagnostics", "wp_PLboost.R", package = "PLboost"))
 ```
 
 ## License

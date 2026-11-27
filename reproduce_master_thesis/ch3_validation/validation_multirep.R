@@ -7,7 +7,7 @@
 #
 # Same models, coefficient vectors and links as the single-sample validation;
 # MLE with lambda held fixed at the true value. Seeded (set.seed(123)), so a
-# rerun reproduces the dissertation tables exactly.
+# rerun reproduces the master thesis tables exactly.
 #
 # Writes to $PLBOOST_OUT (default: the working directory):
 #   val_pl.tex, val_apl_continuous.tex, val_apl_alpha.tex   (cells are "mean (sd)")

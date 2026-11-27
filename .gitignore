@@ -27,6 +27,6 @@ src/*.so
 *.png
 *.jpg
 *.pdf
-reproduce/**/results/
-reproduce/**/imgs/
-reproduce/ch4_application/data/
+reproduce_master_thesis/**/results/
+reproduce_master_thesis/**/imgs/
+reproduce_master_thesis/ch4_application/data/

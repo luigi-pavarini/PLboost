@@ -19,7 +19,7 @@ require("parallel")
 # Parallel cross-validation: use 8 cores (mclapply reads options("mc.cores")).
 options(mc.cores = 8)
 
-# Canonical dissertation scenario: alpha intercept -1.5 (Section 3.2), labelled
+# Canonical master thesis scenario: alpha intercept -1.5 (Section 3.2), labelled
 # "medium". Keep this in sync with `example` in the summary and plot scripts.
 example    = "medium"
 
@@ -28,10 +28,10 @@ n          = 800
 
 p          = 1000             # Main covariates (high-dimensional)
 fam        = 'NO' #"NO", "TF", "LO", "SN", "PE", "Hyp", "SLASH"
-# Grid as reported in the dissertation (Section 3.2: "upper bound of mstop = 800").
+# Grid as reported in the master thesis (Section 3.2: "upper bound of mstop = 800").
 mstop_init = 500
 m_stop_cv  = 800
-#mstop_init = 900   # experimental, does NOT match the dissertation
+#mstop_init = 900   # experimental, does NOT match the master thesis
 #m_stop_cv  = 1200
 nu         = 0.01
 
@@ -85,7 +85,7 @@ X_mat     <- as.matrix(X)
 eta_mu    <- 0.5 + X_mat %*% beta_mu
 eta_sigma <- 0.0 + X_mat %*% beta_sigma
 
-# Canonical scenario for the dissertation (Section 3.2): kappa_alpha = (-1.5, 0.70, -0.50),
+# Canonical scenario for the master thesis (Section 3.2): kappa_alpha = (-1.5, 0.70, -0.50),
 # so alpha ~ logit^-1(-1.5) ~ 0.18 on average, ~20% of observations at the boundary.
 eta_alpha <- -1.5 + X_mat[, c("V999", "V1000")] %*% beta_alpha
 

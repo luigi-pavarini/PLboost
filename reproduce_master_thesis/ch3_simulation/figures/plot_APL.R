@@ -1,5 +1,5 @@
 # Regenerate the APL simulation figures from the CURRENT (medium) scenario.
-# Two fixes vs the figures previously used in the dissertation:
+# Two fixes vs the figures previously used in the master thesis:
 #   (1) they came from the superseded `low` scenario (median exp(lambda) = 1.47)
 #       while the text/Appendix A.2 report the `medium` scenario (2.4242);
 #   (2) the lollipop metric normalized each run's selection counts to sum to 1

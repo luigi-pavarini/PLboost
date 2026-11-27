@@ -2,8 +2,9 @@
 # example_residuals.R
 #
 # Quantile residuals with simulated envelopes for PL and APL fits, by maximum
-# likelihood and by boosting, on data simulated as in the validation of
-# Sections 3.1 and 3.2. Experimental, not part of the dissertation.
+# likelihood and by boosting, and worm plots of the boosting fits, on data
+# simulated as in the validation of Sections 3.1 and 3.2. Experimental, not
+# part of the master thesis.
 # Run:  Rscript example_residuals.R   (draws to Rplots.pdf when not interactive)
 # ==============================================================================
 
@@ -15,6 +16,7 @@ library(PLreg)
 library(Formula)
 
 source(system.file("diagnostics", "residuals_boosting.R", package = "PLboost"))
+source(system.file("diagnostics", "wp_PLboost.R", package = "PLboost"))
 
 # ==============================================================================
 # SETTINGS
@@ -71,8 +73,8 @@ data_pl <- data.frame(y, X)
 fit_pl_mle <- PLreg(y ~ V1 + V2 + V3 + V4 | V3 + V4 + V5, data = data_pl,
                     family = fam, zeta = zeta)
 
-env_pl_mle <- envelope_boost(fit_pl_mle, data_pl, rep = rep_env, conf = conf,
-                             main = "PL - MLE", plot = FALSE)
+env_pl_mle <- envelope_PLboost(fit_pl_mle, data_pl, rep = rep_env, conf = conf,
+                               main = "PL - MLE", plot = FALSE)
 
 # ==============================================================================
 # PL BOOSTING
@@ -85,9 +87,9 @@ fit_pl_boost <- glmboostLSS(
   families = PowerLogit(family = fam, stabilization = "MAD", zeta = zeta),
   control  = boost_control(mstop = mstop_pl, nu = nu, trace = FALSE))
 
-env_pl_boost <- envelope_boost(fit_pl_boost, data_pl, family = fam, zeta = zeta,
-                               rep = rep_env, conf = conf,
-                               main = "PL - boosting", plot = FALSE)
+env_pl_boost <- envelope_PLboost(fit_pl_boost, data_pl, family = fam, zeta = zeta,
+                                 rep = rep_env, conf = conf,
+                                 main = "PL - boosting", plot = FALSE)
 
 # ==============================================================================
 # PL PLOTS AND RESULTS
@@ -100,6 +102,13 @@ par(mfrow = c(1, 1))
 
 summary_env(env_pl_mle)
 summary_env(env_pl_boost)
+
+# ==============================================================================
+# PL WORM PLOT (boosting)
+# ==============================================================================
+
+wp_pl_boost <- plot_worm(env_pl_boost$res, main = "PL - boosting")
+cat(sprintf("PL - boosting    outside the worm plot band %5.1f%%\n", 100 * wp_pl_boost))
 
 # ==============================================================================
 # ==============================================================================
@@ -164,9 +173,9 @@ fit_apl_mle <- IPLreg(y ~ V1 + V2 + V3 + V4 | V3 + V4 + V5 | U1 + U2,
                       data = data_apl, family = fam, zeta = zeta,
                       type = "ML", c = c_infl)
 
-env_apl_mle <- envelope_boost(fit_apl_mle, data_apl, c = c_infl,
-                              rep = rep_env, conf = conf,
-                              main = "APL - MLE", plot = FALSE)
+env_apl_mle <- envelope_PLboost(fit_apl_mle, data_apl, c = c_infl,
+                                rep = rep_env, conf = conf,
+                                main = "APL - MLE", plot = FALSE)
 
 # ==============================================================================
 # APL BOOSTING
@@ -179,9 +188,9 @@ fit_apl_boost <- glmboostLSS(
   families = APL(family = fam, stabilization = "MAD", c = c_infl, zeta = zeta),
   control  = boost_control(mstop = mstop_apl, nu = nu, trace = FALSE))
 
-env_apl_boost <- envelope_boost(fit_apl_boost, data_apl, family = fam, zeta = zeta,
-                                c = c_infl, rep = rep_env, conf = conf,
-                                main = "APL - boosting", plot = FALSE)
+env_apl_boost <- envelope_PLboost(fit_apl_boost, data_apl, family = fam, zeta = zeta,
+                                  c = c_infl, rep = rep_env, conf = conf,
+                                  main = "APL - boosting", plot = FALSE)
 
 # ==============================================================================
 # APL PLOTS AND RESULTS
@@ -194,3 +203,10 @@ par(mfrow = c(1, 1))
 
 summary_env(env_apl_mle)
 summary_env(env_apl_boost)
+
+# ==============================================================================
+# APL WORM PLOT (boosting)
+# ==============================================================================
+
+wp_apl_boost <- plot_worm(env_apl_boost$res, main = "APL - boosting")
+cat(sprintf("APL - boosting   outside the worm plot band %5.1f%%\n", 100 * wp_apl_boost))

@@ -1,6 +1,6 @@
 # ==============================================================================
 # Quantile residuals and simulated envelope for PL and APL fits
-# Experimental, not part of the dissertation and not exported by the package.
+# Experimental, not part of the master thesis and not exported by the package.
 # Source: PLreg_0.4.1/R/PLreg.R  (residuals.PLreg and envelope)
 # Requirements: PLreg and PLboost (pAPL, rAPL). A maximum likelihood APL fit is
 # the IPLreg() object defined in example_residuals.R, next to this file.
@@ -96,9 +96,9 @@ refit_from_fit <- function(object, y_env) {
 #   c       NULL for PL, 0 or 1 for APL
 # ==============================================================================
 
-envelope_boost <- function(object, data, family = NULL, zeta = 2, c = NULL,
-                           rep = 40, conf = 0.95, main = "", envcol = "black",
-                           plot = TRUE) {
+envelope_PLboost <- function(object, data, family = NULL, zeta = 2, c = NULL,
+                             rep = 40, conf = 0.95, main = "", envcol = "black",
+                             plot = TRUE) {
   rep <- max(30, floor(rep))
   if (conf <= 0 | conf >= 1)
     stop("The conf argument must be within the interval (0, 1).", call. = FALSE)

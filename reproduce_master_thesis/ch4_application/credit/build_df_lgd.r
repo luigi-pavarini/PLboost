@@ -14,11 +14,11 @@ library(mltools)
 
 # Factor levels are sorted alphabetically before one-hot encoding, so the column
 # order (and hence the V1, V2, ... codes used downstream) depends on the collation
-# of the session. The dissertation data were built with en_US.UTF-8; pin it so a
+# of the session. The master thesis data were built with en_US.UTF-8; pin it so a
 # run under another locale (e.g. "C" in Rscript) gives the identical object.
 if (!nzchar(suppressWarnings(Sys.setlocale("LC_COLLATE", "en_US.UTF-8"))) &&
     !nzchar(suppressWarnings(Sys.setlocale("LC_COLLATE", "English_United States.1252"))))
-  warning("could not set an en_US collation; column order may differ from the dissertation")
+  warning("could not set an en_US collation; column order may differ from the master thesis")
 
 data_path <- file.path(Sys.getenv("PLBOOST_OUT", unset = "."), "data")
 dir.create(data_path, showWarnings = FALSE, recursive = TRUE)

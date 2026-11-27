@@ -11,7 +11,7 @@
 # n_entries available — no hardcoded 100.
 # ==============================================================================
 
-fam          <- "TF"   # model reported in the dissertation (APL-t); also NO, LO, PE, SN, SLASH, Hyp
+fam          <- "TF"   # model reported in the master thesis (APL-t); also NO, LO, PE, SN, SLASH, Hyp
 # --- resolucao de caminho relativa a este arquivo (nao depende de outras pastas) --
 .script_dir <- function() {
   for (i in seq_len(sys.nframe())) {

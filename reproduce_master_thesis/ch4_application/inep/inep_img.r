@@ -4,10 +4,10 @@
 # Power-Logit (PL) CV version. STYLE MATCHES credit_img_apl.r exactly
 # (2000x2000, rel_dim 1.8, gray85/red4 palette, per-family imgs/<fam> folder,
 # same plot names) so the two applications are visually consistent in the paper /
-# dissertation. PL differences vs the APL script: fields are error_pl / mae_pl,
+# master thesis. PL differences vs the APL script: fields are error_pl / mae_pl,
 # lambda ~ 1 (scalar shape), and there is NO boundary probability -> the alpha
 # plots (plot_alpha_dist, plot_alpha_vs_mu, coef/sel alpha) are dropped.
-# Set `fam` to switch family. The dissertation reports NO.
+# Set `fam` to switch family. The master thesis reports NO.
 # ==============================================================================
 
 suppressMessages({library(data.table)})

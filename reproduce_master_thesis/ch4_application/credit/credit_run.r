@@ -7,7 +7,7 @@
 #   Outer  : R_REPEATS x 5-fold partitions, STRATIFIED on the boundary indicator
 #            (lgd == 1 vs lgd in (0,1)) so every fold keeps the ~60/40 mix.
 #            Folds disjoint & exhaustive. DEFAULT R_REPEATS = 1 (single pass,
-#            as specified for the dissertation). The repeat structure is left settable:
+#            as specified for the master thesis). The repeat structure is left settable:
 #            raise R_REPEATS only if repeated CV is agreed with him.
 #   Inner  : cvrisk() still selects mstop on each fold's 4/5 training data
 #            (nested CV — no leakage into the held-out fold).

@@ -1,7 +1,7 @@
 # ==============================================================================
 # appendixA_boxplots.R
 #
-# Figures A.1 to A.5 of the dissertation: boosting and maximum likelihood
+# Figures A.1 to A.5 of the master thesis: boosting and maximum likelihood
 # estimates across the 100 replications of the validation in Sections 3.1 and
 # 3.2, one figure per scenario and one panel per submodel.
 #

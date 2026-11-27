@@ -5,14 +5,14 @@
 # coefficient over the 50 fits (zeros included) and the variability band
 # avg +/- 1.96 sd across fits.
 #
-# The dissertation tables (Chapter 4) show a hand-picked subset of these rows,
+# The master thesis tables (Chapter 4) show a hand-picked subset of these rows,
 # ordered by frequency; every printed value is reproduced by this script.
 #
 # Usage (from the repository root, PLBOOST_OUT as for the figure scripts):
-#   PLBOOST_OUT=... Rscript reproduce/ch4_application/essentials/selection_table.R \
-#       reproduce/ch4_application/credit/credit_img_apl.r
-#   PLBOOST_OUT=... Rscript reproduce/ch4_application/essentials/selection_table.R \
-#       reproduce/ch4_application/inep/inep_img.r
+#   PLBOOST_OUT=... Rscript reproduce_master_thesis/ch4_application/essentials/selection_table.R \
+#       reproduce_master_thesis/ch4_application/credit/credit_img_apl.r
+#   PLBOOST_OUT=... Rscript reproduce_master_thesis/ch4_application/essentials/selection_table.R \
+#       reproduce_master_thesis/ch4_application/inep/inep_img.r
 #
 # The figure script is sourced first because it builds the coefficient matrices
 # (coef_mu_mat, coef_sigma_mat and, for the adjusted model, coef_alpha_mat);

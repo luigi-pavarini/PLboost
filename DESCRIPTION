@@ -11,8 +11,8 @@ Description: Gradient boosting families for the power logit (PL) class of
     objects compatible with 'gamboostLSS', so that the median, dispersion,
     skewness and (for the adjusted case) boundary-probability submodels are
     estimated jointly by component-wise gradient boosting, with variable
-    selection and regularization as a by-product. It accompanies the MSc
-    dissertation "Boosting-based Inference and Variable Selection for
+    selection and regularization as a by-product. It accompanies the master
+    thesis "Boosting-based Inference and Variable Selection for
     Modeling Bounded Continuous Data" (IME-USP).
 License: MIT + file LICENSE
 Encoding: UTF-8
